@@ -8,7 +8,7 @@ export const ko = {
     settings: "설정"
   },
   auth: {
-    title: "접속 노드",
+    title: "로그인",
     subtitle: "VRChat 자격 증명 필요",
     username: "사용자 이름",
     password: "비밀번호",

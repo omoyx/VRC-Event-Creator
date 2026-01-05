@@ -8,7 +8,7 @@ export const de = {
     settings: "Einstellungen"
   },
   auth: {
-    title: "Zugriffsknoten",
+    title: "Anmelden",
     subtitle: "VRChat-Anmeldedaten erforderlich",
     username: "Benutzername",
     password: "Passwort",

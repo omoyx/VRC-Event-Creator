@@ -8,7 +8,7 @@ export const ru = {
     settings: "Настройки"
   },
   auth: {
-    title: "Узел доступа",
+    title: "Войти",
     subtitle: "Требуются учетные данные VRChat",
     username: "Имя пользователя",
     password: "Пароль",

@@ -8,7 +8,7 @@ export const zh = {
     settings: "设置"
   },
   auth: {
-    title: "访问节点",
+    title: "登录",
     subtitle: "需要 VRChat 凭据",
     username: "用户名",
     password: "密码",

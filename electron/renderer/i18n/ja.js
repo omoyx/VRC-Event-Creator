@@ -8,7 +8,7 @@ export const ja = {
     settings: "設定"
   },
   auth: {
-    title: "アクセスノード",
+    title: "ログイン",
     subtitle: "VRChatの認証情報が必要です",
     username: "ユーザー名",
     password: "パスワード",
