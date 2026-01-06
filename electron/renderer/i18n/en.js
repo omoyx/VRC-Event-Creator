@@ -241,13 +241,15 @@ export const en = {
     manualProfileOption: "Manual (no profile)",
     pastDateError: "Cannot select a past date.",
     futureDateError: "Events can only be scheduled up to 1 year in advance.",
-    upcomingLimitNotice: "VRChat currently limits each group to 10 upcoming events.",
+    upcomingLimitNotice: "VRChat currently prevents us from creating more than 10 events per-group per-hour.",
     upcomingCountGroupFallback: "This group",
-    upcomingCountStatus: "Upcoming events for {group}: {count}/{limit}.",
-    upcomingCountUnknown: "Upcoming event count unavailable.",
-    upcomingCountToast: "{group} now has {count}/{limit} upcoming events.",
-    upcomingLimitReached: "Limit reached: {group} already has {limit} upcoming events. Remove or reschedule one.",
-    upcomingLimitError: "Limit reached: {group} already has {limit} upcoming events. Remove or reschedule one.",
+    upcomingCountStatus: "Events created for {group} this hour: {count}/{limit}.",
+    upcomingCountUnknown: "Event creation count unavailable.",
+    upcomingCountToast: "Events created for {group} this hour: {count}/{limit}.",
+    upcomingLimitReached: "Event creation is temporarily restricted. Please wait and try again later.",
+    upcomingLimitError: "Event creation failed. Please wait and try again.",
+    crossPlatformRateLimit: "Rate Limited. Untracked events created on another platform may count toward your limit. Try again in {minutes} minutes.",
+    unknownRateLimit: "Rate limited. Try again later.",
     upcomingCountRefresh: "Refresh",
     createButton: "Create Event",
     created: "Event created.",
@@ -430,6 +432,7 @@ export const en = {
     save: "Save",
     cancel: "Cancel",
     loading: "Loading...",
+    rateLimitError: "Rate limited. Please wait and try again later.",
     noMatches: "No matches.",
     noGroupsAccess: "No groups with calendar access",
     accessTypes: {
@@ -454,6 +457,13 @@ export const en = {
   wizard: {
     back: "Back",
     next: "Next"
+  },
+  conflict: {
+    title: "Event Conflict",
+    message: "An event \"{title}\" is already scheduled at this time.",
+    skipSession: "Don't ask again this session",
+    changeTime: "Choose Different Time",
+    continue: "Create Anyway"
   }
 };
 

@@ -16,6 +16,75 @@ export async function handleChangeDataDir(api) {
 }
 
 // ============================================================================
+// Rate Limit Utilities
+// ============================================================================
+
+const RATE_LIMIT_SCHEDULE_MS = [
+  5000,
+  10000,
+  30000,
+  60000,
+  120000,
+  300000,
+  600000,
+  1800000,
+  3600000
+];
+
+function getRateLimitStore() {
+  if (!state.app.rateLimits) {
+    state.app.rateLimits = {};
+  }
+  return state.app.rateLimits;
+}
+
+export function getRateLimitRemainingMs(key) {
+  const entry = state.app?.rateLimits?.[key];
+  if (!entry || !entry.blockedUntil) {
+    return 0;
+  }
+  return Math.max(0, entry.blockedUntil - Date.now());
+}
+
+export function isRateLimited(key) {
+  return getRateLimitRemainingMs(key) > 0;
+}
+
+export function registerRateLimit(key) {
+  const store = getRateLimitStore();
+  const entry = store[key] || { attempts: 0, blockedUntil: 0 };
+  const nextAttempt = Math.min(entry.attempts + 1, RATE_LIMIT_SCHEDULE_MS.length);
+  const delayMs = RATE_LIMIT_SCHEDULE_MS[nextAttempt - 1];
+  const blockedUntil = Date.now() + delayMs;
+  store[key] = {
+    attempts: nextAttempt,
+    blockedUntil
+  };
+  return { delayMs, blockedUntil, attempts: nextAttempt };
+}
+
+export function clearRateLimit(key) {
+  const store = getRateLimitStore();
+  if (!store[key]) {
+    return;
+  }
+  store[key] = { attempts: 0, blockedUntil: 0 };
+}
+
+export function isRateLimitError(error) {
+  if (!error) {
+    return false;
+  }
+  const status = error?.status || error?.response?.status;
+  const code = error?.code;
+  const message = String(error?.message || "").toLowerCase();
+  return status === 429
+    || code === "UPCOMING_LIMIT"
+    || message.includes("too many")
+    || message.includes("rate limit");
+}
+
+// ============================================================================
 // Timezone Utilities
 // ============================================================================
 

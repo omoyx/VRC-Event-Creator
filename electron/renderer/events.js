@@ -1,12 +1,220 @@
-import { dom, state } from "./state.js";
+import { dom, state, getEventWizard } from "./state.js";
 import { showToast, renderSelect, renderChecklist } from "./ui.js";
-import { buildTimezones, ensureTimezoneOption, enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, formatDurationPreview, enforceGroupAccess, getMaxEventDateString } from "./utils.js";
+import { buildTimezones, ensureTimezoneOption, enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, formatDurationPreview, enforceGroupAccess, getMaxEventDateString, getRateLimitRemainingMs, clearRateLimit, isRateLimitError } from "./utils.js";
 import { EVENT_DESCRIPTION_LIMIT, EVENT_NAME_LIMIT, LANGUAGES, PLATFORMS, TAG_LIMIT } from "./config.js";
 import { t, getCurrentLanguage, getLanguageDisplayName } from "./i18n/index.js";
 import { fetchGroupRoles, renderRoleList } from "./roles.js";
 
-const UPCOMING_EVENT_LIMIT = 10;
+const EVENT_HOURLY_LIMIT = 10;
+const EVENT_HOURLY_WINDOW_MS = 60 * 60 * 1000;
+const CREATE_RATE_LIMIT_BASE_KEY = "events:create";
+const HOURLY_HISTORY_STORAGE_KEY = "vrc-event-hourly-history-v1";
+const CREATED_EVENTS_STORAGE_KEY = "vrc-event-created-ids-v1";
+const BACKOFF_SEQUENCE = [2, 4, 8, 16, 32, 60]; // minutes
 let roleFetchToken = 0;
+let hourlyCountTimer = null;
+let createBlockTimer = null;
+let hourlyHistoryLoaded = false;
+let createdEventIdsLoaded = false;
+let conflictResolve = null;
+
+/**
+ * Shows the conflict modal and returns a Promise.
+ * Resolves with { continue: true } to proceed, or { continue: false, changeTime: true/false }
+ */
+function showConflictModal(eventTitle) {
+  return new Promise(resolve => {
+    conflictResolve = resolve;
+    dom.conflictMessage.textContent = t("conflict.message", { title: eventTitle });
+    dom.conflictSkipSession.checked = false;
+    dom.conflictOverlay.classList.remove("is-hidden");
+  });
+}
+
+function hideConflictModal() {
+  dom.conflictOverlay.classList.add("is-hidden");
+  conflictResolve = null;
+}
+
+function handleConflictContinue() {
+  if (dom.conflictSkipSession.checked) {
+    state.session.skipConflictWarning = true;
+  }
+  hideConflictModal();
+  if (conflictResolve) {
+    conflictResolve({ continue: true });
+  }
+}
+
+function handleConflictChangeTime() {
+  hideConflictModal();
+  if (conflictResolve) {
+    conflictResolve({ continue: false, changeTime: true });
+  }
+}
+
+function pruneHistoryEntries(entries) {
+  const cutoff = Date.now() - EVENT_HOURLY_WINDOW_MS;
+  return entries.filter(entry => entry >= cutoff);
+}
+
+function loadHourlyHistory() {
+  if (hourlyHistoryLoaded) {
+    return;
+  }
+  hourlyHistoryLoaded = true;
+  try {
+    const raw = localStorage.getItem(HOURLY_HISTORY_STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return;
+    }
+    const normalized = {};
+    Object.entries(parsed).forEach(([groupId, entries]) => {
+      if (!Array.isArray(entries)) {
+        return;
+      }
+      const cleaned = entries
+        .map(entry => Number(entry))
+        .filter(entry => Number.isFinite(entry));
+      const pruned = pruneHistoryEntries(cleaned);
+      if (pruned.length) {
+        normalized[groupId] = pruned;
+      }
+    });
+    state.event.hourlyCreateHistory = normalized;
+    saveHourlyHistory();
+  } catch (err) {
+    // Ignore storage errors.
+  }
+}
+
+function saveHourlyHistory() {
+  if (!hourlyHistoryLoaded) {
+    return;
+  }
+  try {
+    localStorage.setItem(HOURLY_HISTORY_STORAGE_KEY, JSON.stringify(state.event.hourlyCreateHistory));
+  } catch (err) {
+    // Ignore storage errors.
+  }
+}
+
+function ensureHourlyHistoryLoaded() {
+  if (!hourlyHistoryLoaded) {
+    loadHourlyHistory();
+  }
+}
+
+function loadCreatedEventIds() {
+  if (createdEventIdsLoaded) {
+    return;
+  }
+  createdEventIdsLoaded = true;
+  try {
+    const raw = localStorage.getItem(CREATED_EVENTS_STORAGE_KEY);
+    if (!raw) {
+      state.event.createdEventIds = {};
+      return;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      state.event.createdEventIds = {};
+      return;
+    }
+    const normalized = {};
+    Object.entries(parsed).forEach(([key, entries]) => {
+      if (!Array.isArray(entries)) {
+        return;
+      }
+      const pruned = entries.filter(entry => {
+        if (!entry || typeof entry !== "object") {
+          return false;
+        }
+        if (!entry.id || !Number.isFinite(entry.timestamp)) {
+          return false;
+        }
+        return entry.timestamp >= (Date.now() - EVENT_HOURLY_WINDOW_MS);
+      });
+      if (pruned.length) {
+        normalized[key] = pruned;
+      }
+    });
+    state.event.createdEventIds = normalized;
+    saveCreatedEventIds();
+  } catch (err) {
+    state.event.createdEventIds = {};
+  }
+}
+
+function saveCreatedEventIds() {
+  if (!createdEventIdsLoaded) {
+    return;
+  }
+  try {
+    localStorage.setItem(CREATED_EVENTS_STORAGE_KEY, JSON.stringify(state.event.createdEventIds));
+  } catch (err) {
+    // Ignore storage errors.
+  }
+}
+
+function ensureCreatedEventIdsLoaded() {
+  if (!createdEventIdsLoaded) {
+    loadCreatedEventIds();
+  }
+}
+
+function recordCreatedEventId(groupId, eventId, timestamp) {
+  ensureCreatedEventIdsLoaded();
+  if (!groupId || !eventId) {
+    return;
+  }
+  const userId = getCurrentUserId();
+  if (!userId) {
+    return;
+  }
+  const key = `${userId}::${groupId}`;
+  if (!state.event.createdEventIds[key]) {
+    state.event.createdEventIds[key] = [];
+  }
+  const entry = { id: eventId, timestamp };
+  state.event.createdEventIds[key].push(entry);
+  const cutoff = Date.now() - EVENT_HOURLY_WINDOW_MS;
+  state.event.createdEventIds[key] = state.event.createdEventIds[key]
+    .filter(e => e.timestamp >= cutoff);
+  saveCreatedEventIds();
+}
+
+function getCurrentUserId() {
+  return state.user?.id || state.user?.userId || null;
+}
+
+function getHistoryKey(groupId) {
+  ensureHourlyHistoryLoaded();
+  if (!groupId) {
+    return null;
+  }
+  const userId = getCurrentUserId();
+  if (!userId) {
+    return null;
+  }
+  const key = `${userId}::${groupId}`;
+  if (!state.event.hourlyCreateHistory[key] && state.event.hourlyCreateHistory[groupId]) {
+    state.event.hourlyCreateHistory[key] = state.event.hourlyCreateHistory[groupId];
+    delete state.event.hourlyCreateHistory[groupId];
+    saveHourlyHistory();
+  }
+  return key;
+}
+
+function getCreateRateLimitKey(groupId) {
+  const userId = getCurrentUserId() || "user";
+  const groupKey = groupId || "group";
+  return `${CREATE_RATE_LIMIT_BASE_KEY}:${userId}:${groupKey}`;
+}
 
 function getRoleLabels() {
   return {
@@ -17,9 +225,244 @@ function getRoleLabels() {
   };
 }
 
+function getHourlyHistory(groupId) {
+  ensureHourlyHistoryLoaded();
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return [];
+  }
+  if (!state.event.hourlyCreateHistory[key]) {
+    state.event.hourlyCreateHistory[key] = [];
+  }
+  return state.event.hourlyCreateHistory[key];
+}
+
+function pruneHourlyHistory(groupId) {
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return [];
+  }
+  const history = getHourlyHistory(groupId);
+  const next = pruneHistoryEntries(history);
+  if (next.length !== history.length) {
+    state.event.hourlyCreateHistory[key] = next;
+    saveHourlyHistory();
+  } else if (state.event.hourlyCreateHistory[key] !== history) {
+    state.event.hourlyCreateHistory[key] = history;
+  }
+  return next;
+}
+
+function getHourlyCount(groupId) {
+  if (!groupId) {
+    return 0;
+  }
+  return pruneHourlyHistory(groupId).length;
+}
+
+function recordHourlyEvent(groupId, timestamp = Date.now(), eventId = null) {
+  if (!groupId || !getCurrentUserId()) {
+    return;
+  }
+  const history = getHourlyHistory(groupId);
+  history.push(timestamp);
+  pruneHourlyHistory(groupId);
+  saveHourlyHistory();
+  if (eventId) {
+    recordCreatedEventId(groupId, eventId, timestamp);
+  }
+}
+
+function getEventCreatedAtMs(event) {
+  if (!event) {
+    return null;
+  }
+  const value = event.createdAtUtc || event.createdAt || event.created_at || null;
+  if (!value) {
+    return null;
+  }
+  const ms = Date.parse(value);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+function updateServerHourlyCount(events) {
+  // Count ALL events created in the last hour (by anyone) for cross-platform detection
+  if (!Array.isArray(events)) {
+    state.event.serverHourlyCount = 0;
+    return;
+  }
+  const cutoff = Date.now() - EVENT_HOURLY_WINDOW_MS;
+  const count = events.filter(event => {
+    const createdAtMs = getEventCreatedAtMs(event);
+    return Number.isFinite(createdAtMs) && createdAtMs >= cutoff;
+  }).length;
+  state.event.serverHourlyCount = count;
+}
+
+function getTotalLocalCount(groupId) {
+  // Sum events from ALL users for this group (for cross-platform detection)
+  ensureHourlyHistoryLoaded();
+  if (!groupId) {
+    return 0;
+  }
+  const suffix = `::${groupId}`;
+  const cutoff = Date.now() - EVENT_HOURLY_WINDOW_MS;
+  let total = 0;
+  Object.entries(state.event.hourlyCreateHistory).forEach(([key, entries]) => {
+    if (!key.endsWith(suffix)) {
+      return;
+    }
+    if (!Array.isArray(entries)) {
+      return;
+    }
+    total += entries.filter(ts => ts >= cutoff).length;
+  });
+  return total;
+}
+
+function getNextBackoffMinutes() {
+  const minutes = BACKOFF_SEQUENCE[state.event.backoffIndex];
+  state.event.backoffIndex = (state.event.backoffIndex + 1) % BACKOFF_SEQUENCE.length;
+  return minutes;
+}
+
+function resetBackoff() {
+  state.event.backoffIndex = 0;
+}
+
+function getRateLimitMessage(rateLimitInfo) {
+  if (!rateLimitInfo) {
+    return t("events.unknownRateLimit");
+  }
+  const { case: rateLimitCase, minutes } = rateLimitInfo;
+  if (rateLimitCase === "A") {
+    // User hit their 10/hour limit - use existing message
+    return t("events.upcomingLimitError");
+  }
+  if (rateLimitCase === "B") {
+    // Cross-platform events
+    return t("events.crossPlatformRateLimit", { minutes: minutes || 2 });
+  }
+  // Case C: Unknown hard limit
+  return t("events.unknownRateLimit");
+}
+
+function getNextHourlyExpiry(groupId) {
+  const history = pruneHourlyHistory(groupId);
+  if (!history.length) {
+    return null;
+  }
+  const earliest = Math.min(...history);
+  return earliest + EVENT_HOURLY_WINDOW_MS;
+}
+
+function getHourlyLimitRemainingMs(groupId) {
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return 0;
+  }
+  const until = state.event.hourlyLimitUntil[key] || 0;
+  if (!until) {
+    return 0;
+  }
+  const remaining = until - Date.now();
+  if (remaining <= 0) {
+    delete state.event.hourlyLimitUntil[key];
+    return 0;
+  }
+  return remaining;
+}
+
+function setHourlyLimitUntil(groupId, until) {
+  const key = getHistoryKey(groupId);
+  if (!key || !until) {
+    return;
+  }
+  state.event.hourlyLimitUntil[key] = until;
+}
+
+function clearHourlyLimit(groupId) {
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return;
+  }
+  delete state.event.hourlyLimitUntil[key];
+}
+
+function getCreateBlockRemainingMs(groupId) {
+  const hourlyRemaining = getHourlyLimitRemainingMs(groupId);
+  const backoffRemaining = getRateLimitRemainingMs(getCreateRateLimitKey(groupId));
+  return Math.max(hourlyRemaining, backoffRemaining);
+}
+
+function scheduleHourlyCountUpdate(groupId) {
+  if (hourlyCountTimer) {
+    window.clearTimeout(hourlyCountTimer);
+    hourlyCountTimer = null;
+  }
+  if (!groupId) {
+    return;
+  }
+  const nextExpiry = getNextHourlyExpiry(groupId);
+  if (!nextExpiry) {
+    return;
+  }
+  const delayMs = Math.max(0, nextExpiry - Date.now());
+  hourlyCountTimer = window.setTimeout(() => {
+    renderUpcomingEventCount();
+    updateEventCreateDisabled();
+  }, delayMs + 50);
+}
+
+function scheduleCreateBlockTimer(groupId) {
+  if (createBlockTimer) {
+    window.clearTimeout(createBlockTimer);
+    createBlockTimer = null;
+  }
+  const remaining = getCreateBlockRemainingMs(groupId);
+  if (remaining <= 0) {
+    return;
+  }
+  createBlockTimer = window.setTimeout(() => {
+    updateEventCreateDisabled();
+  }, remaining + 50);
+}
+
+function handleCreateRateLimit(groupId) {
+  const userLocalCount = getHourlyCount(groupId);
+  const totalLocalCount = getTotalLocalCount(groupId);
+  const serverCount = state.event.serverHourlyCount;
+
+  // Case A: User hit their 10/hour limit
+  if (userLocalCount >= EVENT_HOURLY_LIMIT) {
+    const nextExpiry = getNextHourlyExpiry(groupId);
+    if (nextExpiry) {
+      setHourlyLimitUntil(groupId, nextExpiry);
+    }
+    scheduleCreateBlockTimer(groupId);
+    return { case: "A", minutes: null };
+  }
+
+  // Case B: Cross-platform events (totalLocal < server)
+  // Case C: Unknown hard limit (totalLocal == server but still got 429)
+  const isCrossPlatform = totalLocalCount < serverCount;
+  const backoffMinutes = getNextBackoffMinutes();
+  const blockUntil = Date.now() + (backoffMinutes * 60 * 1000);
+  setHourlyLimitUntil(groupId, blockUntil);
+  scheduleCreateBlockTimer(groupId);
+
+  return {
+    case: isCrossPlatform ? "B" : "C",
+    minutes: backoffMinutes
+  };
+}
+
 function updateEventCreateDisabled() {
+  const groupId = dom.eventGroup?.value;
+  const isRateLimited = getCreateBlockRemainingMs(groupId) > 0;
+  state.event.createBlocked = isRateLimited;
   dom.eventCreate.disabled = !state.user
-    || state.event.createBlocked
+    || isRateLimited
     || state.event.createInProgress
     || state.app?.updateAvailable;
 }
@@ -95,65 +538,53 @@ function renderUpcomingEventCount() {
   if (!dom.eventUpcomingCount) {
     return;
   }
+  ensureHourlyHistoryLoaded();
   if (dom.eventCountRefresh) {
     dom.eventCountRefresh.disabled = !state.user || !dom.eventGroup.value;
   }
-  const groupName = getGroupName(dom.eventGroup.value);
-  const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
-  if (typeof state.event.upcomingCount === "number") {
-    dom.eventUpcomingCount.textContent = t("events.upcomingCountStatus", {
-      group: groupName || t("events.upcomingCountGroupFallback"),
-      count: state.event.upcomingCount,
-      limit
-    });
+  const groupId = dom.eventGroup.value;
+  if (!groupId) {
+    dom.eventUpcomingCount.textContent = t("events.upcomingCountUnknown");
     return;
   }
-  dom.eventUpcomingCount.textContent = t("events.upcomingCountUnknown");
+  const groupName = getGroupName(groupId);
+  const count = getHourlyCount(groupId);
+  state.event.upcomingCount = count;
+  dom.eventUpcomingCount.textContent = t("events.upcomingCountStatus", {
+    group: groupName || t("events.upcomingCountGroupFallback"),
+    count,
+    limit: EVENT_HOURLY_LIMIT
+  });
+  scheduleHourlyCountUpdate(groupId);
 }
 
 export async function refreshUpcomingEventCount(api, options = {}) {
-  if (!api?.getUpcomingEventCount || !dom.eventGroup) {
-    state.event.upcomingCount = null;
-    state.event.createBlocked = false;
-    renderUpcomingEventCount();
-    updateEventCreateDisabled();
-    return null;
-  }
   const groupId = dom.eventGroup.value;
   if (!groupId) {
     state.event.upcomingCount = null;
-    state.event.createBlocked = false;
     renderUpcomingEventCount();
     updateEventCreateDisabled();
     return null;
   }
-  if (options.skipFetch) {
-    renderUpcomingEventCount();
-    return state.event.upcomingCount;
-  }
-  try {
-    const result = await api.getUpcomingEventCount({ groupId });
-    const nextCount = Number(result?.count);
-    const nextLimit = Number(result?.limit) || UPCOMING_EVENT_LIMIT;
-    state.event.upcomingCount = Number.isFinite(nextCount) ? nextCount : null;
-    state.event.upcomingLimit = nextLimit;
-    if (Number.isFinite(nextCount)) {
-      if (nextCount >= nextLimit) {
-        state.event.createBlocked = true;
-      } else if (options.allowUnblock !== false) {
-        state.event.createBlocked = false;
-      }
-    } else if (options.allowUnblock !== false) {
-      state.event.createBlocked = false;
+  const useServer = options.useServer !== false;
+  if (useServer && api?.listGroupEvents) {
+    try {
+      const events = await api.listGroupEvents({
+        groupId,
+        upcomingOnly: true,
+        includeNonEditable: true
+      });
+      // Store server count for cross-platform detection (not for display)
+      updateServerHourlyCount(events);
+    } catch (err) {
+      // Ignore list failures and keep local history.
     }
-    renderUpcomingEventCount();
-    updateEventCreateDisabled();
-    return state.event.upcomingCount;
-  } catch (err) {
-    state.event.upcomingCount = null;
-    renderUpcomingEventCount();
-    return null;
   }
+  const count = getHourlyCount(groupId);
+  state.event.upcomingCount = count;
+  renderUpcomingEventCount();
+  updateEventCreateDisabled();
+  return count;
 }
 
 export function renderUpcomingEventCountLabel() {
@@ -363,10 +794,8 @@ export async function handleEventCreate(api) {
     return { success: false, message: t("events.selectGroupError") };
   }
   enforceGroupAccess(dom.eventAccess, groupId);
-  if (state.event.createBlocked) {
-    const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
-    const groupName = getGroupName(groupId) || t("events.upcomingCountGroupFallback");
-    const message = t("events.upcomingLimitReached", { group: groupName, limit });
+  if (getCreateBlockRemainingMs(groupId) > 0) {
+    const message = t("events.upcomingLimitReached");
     showToast(message, true, { duration: 8000 });
     return { success: false, message, toastShown: true };
   }
@@ -466,14 +895,19 @@ export async function handleEventCreate(api) {
       manualDate,
       manualTime
     });
-    if (prep.conflictEvent) {
-      const confirmCreate = window.confirm(
-        `Existing event "${prep.conflictEvent.title}" is at this time. Continue anyway?`
-      );
-      if (!confirmCreate) {
+    if (prep.conflictEvent && !state.session.skipConflictWarning) {
+      const conflictResult = await showConflictModal(prep.conflictEvent.title);
+      if (!conflictResult.continue) {
         state.event.createInProgress = false;
         updateEventCreateDisabled();
-        return { success: false, message: "Event creation cancelled." };
+        if (conflictResult.changeTime) {
+          // Navigate back to date selection step (step index 1)
+          const wizard = getEventWizard();
+          if (wizard) {
+            wizard.goTo(1);
+          }
+        }
+        return { success: false, message: t("events.failed") };
       }
     }
     const result = await api.createEvent({
@@ -483,31 +917,39 @@ export async function handleEventCreate(api) {
       eventData
     });
     if (!result?.ok) {
-      const status = result?.error?.status;
-      if (status === 429 || result?.error?.code === "UPCOMING_LIMIT") {
-        const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
-        const groupName = getGroupName(groupId) || t("events.upcomingCountGroupFallback");
-        state.event.createBlocked = true;
+      if (isRateLimitError(result?.error)) {
         state.event.createInProgress = false;
+        const rateLimitInfo = handleCreateRateLimit(groupId);
         updateEventCreateDisabled();
-        showToast(t("events.upcomingLimitError", { group: groupName, limit }), true, { duration: 8000 });
-        await refreshUpcomingEventCount(api, { allowUnblock: false });
-        return { success: false, message: t("events.upcomingLimitError", { group: groupName, limit }), toastShown: true };
+        const message = getRateLimitMessage(rateLimitInfo);
+        showToast(message, true, { duration: 8000 });
+        return { success: false, message, toastShown: true };
       }
       state.event.createInProgress = false;
       updateEventCreateDisabled();
       return { success: false, message: result?.error?.message || "Could not create event." };
     }
+    clearRateLimit(getCreateRateLimitKey(groupId));
+    clearHourlyLimit(groupId);
+    resetBackoff();
+    recordHourlyEvent(groupId, Date.now(), result.eventId);
     state.event.createInProgress = false;
     updateEventCreateDisabled();
-    const count = await refreshUpcomingEventCount(api);
+    const count = await refreshUpcomingEventCount(api, { useServer: false });
     const groupName = getGroupName(groupId) || t("events.upcomingCountGroupFallback");
-    const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
     const message = typeof count === "number"
-      ? t("events.upcomingCountToast", { group: groupName, count, limit })
+      ? t("events.upcomingCountToast", { group: groupName, count, limit: EVENT_HOURLY_LIMIT })
       : t("events.created");
     return { success: true, message };
   } catch (err) {
+    if (isRateLimitError(err)) {
+      state.event.createInProgress = false;
+      const rateLimitInfo = handleCreateRateLimit(groupId);
+      updateEventCreateDisabled();
+      const message = getRateLimitMessage(rateLimitInfo);
+      showToast(message, true, { duration: 8000 });
+      return { success: false, message, toastShown: true };
+    }
     state.event.createInProgress = false;
     updateEventCreateDisabled();
     return { success: false, message: err?.message || "Could not create event." };
@@ -604,4 +1046,12 @@ export function applyProfileToEventForm(groupId, profileKey, api) {
 function getProfileLabel(profileKey, profile) {
   const label = (profile?.displayName || "").trim();
   return label || profileKey;
+}
+
+// Bind conflict modal event handlers
+if (dom.conflictContinue) {
+  dom.conflictContinue.addEventListener("click", handleConflictContinue);
+}
+if (dom.conflictChangeTime) {
+  dom.conflictChangeTime.addEventListener("click", handleConflictChangeTime);
 }

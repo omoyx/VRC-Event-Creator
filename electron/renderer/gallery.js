@@ -1,8 +1,10 @@
 import { dom, state } from "./state.js";
 import { showToast } from "./ui.js";
 import { t } from "./i18n/index.js";
+import { getRateLimitRemainingMs, registerRateLimit, clearRateLimit, isRateLimitError } from "./utils.js";
 
 const PAGE_SIZE = 40;
+const GALLERY_RATE_LIMIT_KEY = "gallery:upload";
 
 let galleryApi = null;
 
@@ -133,6 +135,10 @@ async function uploadGalleryImage() {
     showToast(t("gallery.uploadFailed"), true);
     return;
   }
+  if (getRateLimitRemainingMs(GALLERY_RATE_LIMIT_KEY) > 0) {
+    showToast(t("common.rateLimitError"), true, { duration: 8000 });
+    return;
+  }
   if (state.gallery.loading) {
     return;
   }
@@ -141,6 +147,11 @@ async function uploadGalleryImage() {
   try {
     result = await galleryApi.uploadGalleryImage();
   } catch (err) {
+    if (isRateLimitError(err)) {
+      registerRateLimit(GALLERY_RATE_LIMIT_KEY);
+      showToast(t("common.rateLimitError"), true, { duration: 8000 });
+      return;
+    }
     showToast(t("gallery.uploadFailed"), true);
   } finally {
     setGalleryLoading(false);
@@ -150,11 +161,17 @@ async function uploadGalleryImage() {
     return;
   }
   if (!result.ok) {
+    if (isRateLimitError(result?.error)) {
+      registerRateLimit(GALLERY_RATE_LIMIT_KEY);
+      showToast(t("common.rateLimitError"), true, { duration: 8000 });
+      return;
+    }
     showToast(getGalleryUploadErrorMessage(result.error), true);
     return;
   }
 
   const uploadedId = result.data?.id || null;
+  clearRateLimit(GALLERY_RATE_LIMIT_KEY);
   showToast(t("gallery.uploadSuccess"));
   await loadGalleryFiles({ reset: true });
   if (uploadedId) {
