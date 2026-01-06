@@ -1,11 +1,15 @@
 import { dom, state } from "./state.js";
 import { renderSelect, renderChecklist, showToast } from "./ui.js";
-import { buildTimezones, ensureTimezoneOption, createTagInput, enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, sanitizeDurationInputValue, formatDurationPreview, enforceGroupAccess, getTodayDateString, getMaxEventDateString } from "./utils.js";
+import { buildTimezones, ensureTimezoneOption, createTagInput, enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, sanitizeDurationInputValue, formatDurationPreview, enforceGroupAccess, getTodayDateString, getMaxEventDateString, getRateLimitRemainingMs, registerRateLimit, clearRateLimit, isRateLimitError } from "./utils.js";
 import { ACCESS_TYPES, CATEGORIES, EVENT_DESCRIPTION_LIMIT, EVENT_NAME_LIMIT, LANGUAGES, PLATFORMS, TAG_LIMIT } from "./config.js";
 import { t, getLanguageDisplayName } from "./i18n/index.js";
 import { fetchGroupRoles, renderRoleList } from "./roles.js";
 
 const HOLD_DURATION_MS = 2000;
+const MODIFY_RATE_LIMIT_KEYS = {
+  update: "events:update",
+  delete: "events:delete"
+};
 let modifyApi = null;
 let roleFetchToken = 0;
 
@@ -422,6 +426,10 @@ function attachHoldToDelete(button, onConfirm) {
       showToast(t("modify.updateRequired"), true, { duration: 8000 });
       return;
     }
+    if (getRateLimitRemainingMs(MODIFY_RATE_LIMIT_KEYS.delete) > 0) {
+      showToast(t("common.rateLimitError"), true, { duration: 8000 });
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     holding = true;
@@ -452,11 +460,21 @@ async function handleDeleteEvent(event) {
     showToast(t("modify.deleteFailed"), true);
     return;
   }
+  if (getRateLimitRemainingMs(MODIFY_RATE_LIMIT_KEYS.delete) > 0) {
+    showToast(t("common.rateLimitError"), true, { duration: 8000 });
+    return;
+  }
   const result = await modifyApi.deleteEvent({ groupId: event.groupId, eventId: event.id });
   if (!result?.ok) {
+    if (isRateLimitError(result?.error)) {
+      registerRateLimit(MODIFY_RATE_LIMIT_KEYS.delete);
+      showToast(t("common.rateLimitError"), true, { duration: 8000 });
+      return;
+    }
     showToast(result?.error?.message || t("modify.deleteFailed"), true);
     return;
   }
+  clearRateLimit(MODIFY_RATE_LIMIT_KEYS.delete);
   showToast(t("modify.deleted"));
   await refreshModifyEvents(modifyApi, { preserveSelection: true });
 }
@@ -468,6 +486,10 @@ async function handleModifySave() {
   }
   if (state.app?.updateAvailable) {
     showToast(t("modify.updateRequired"), true, { duration: 8000 });
+    return;
+  }
+  if (getRateLimitRemainingMs(MODIFY_RATE_LIMIT_KEYS.update) > 0) {
+    showToast(t("common.rateLimitError"), true, { duration: 8000 });
     return;
   }
   const event = state.modify.selectedEvent;
@@ -535,6 +557,7 @@ async function handleModifySave() {
   }
   state.modify.saving = true;
   dom.modifySave.disabled = true;
+  let hitRateLimit = false;
 
     const eventData = {
       title,
@@ -558,15 +581,35 @@ async function handleModifySave() {
       manualTime
     });
     if (!result?.ok) {
+      if (isRateLimitError(result?.error)) {
+        hitRateLimit = true;
+        const rateLimit = registerRateLimit(MODIFY_RATE_LIMIT_KEYS.update);
+        showToast(t("common.rateLimitError"), true, { duration: 8000 });
+        return;
+      }
       showToast(result?.error?.message || t("modify.saveFailed"), true);
       return;
     }
+    clearRateLimit(MODIFY_RATE_LIMIT_KEYS.update);
     showToast(t("modify.saved"));
     closeModifyModal();
     await refreshModifyEvents(modifyApi, { preserveSelection: true });
   } finally {
     state.modify.saving = false;
-    dom.modifySave.disabled = false;
+    if (!hitRateLimit) {
+      dom.modifySave.disabled = false;
+    } else {
+      const remainingMs = getRateLimitRemainingMs(MODIFY_RATE_LIMIT_KEYS.update);
+      if (remainingMs > 0) {
+        window.setTimeout(() => {
+          if (!state.modify.saving) {
+            dom.modifySave.disabled = false;
+          }
+        }, remainingMs + 50);
+      } else {
+        dom.modifySave.disabled = false;
+      }
+    }
   }
 }
 

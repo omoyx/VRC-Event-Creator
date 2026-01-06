@@ -163,7 +163,8 @@ export const dom = {
 
 export const state = {
   app: {
-    updateAvailable: false
+    updateAvailable: false,
+    rateLimits: {}
   },
   user: null,
   groups: [],
@@ -179,6 +180,8 @@ export const state = {
     dateSource: "manual",
     upcomingCount: null,
     upcomingLimit: 10,
+    hourlyCreateHistory: {},
+    hourlyLimitUntil: {},
     createBlocked: false,
     createInProgress: false,
     tagInput: null,

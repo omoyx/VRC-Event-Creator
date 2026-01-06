@@ -1,12 +1,102 @@
 import { dom, state } from "./state.js";
 import { showToast, renderSelect, renderChecklist } from "./ui.js";
-import { buildTimezones, ensureTimezoneOption, enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, formatDurationPreview, enforceGroupAccess, getMaxEventDateString } from "./utils.js";
+import { buildTimezones, ensureTimezoneOption, enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, formatDurationPreview, enforceGroupAccess, getMaxEventDateString, getRateLimitRemainingMs, registerRateLimit, clearRateLimit, isRateLimitError } from "./utils.js";
 import { EVENT_DESCRIPTION_LIMIT, EVENT_NAME_LIMIT, LANGUAGES, PLATFORMS, TAG_LIMIT } from "./config.js";
 import { t, getCurrentLanguage, getLanguageDisplayName } from "./i18n/index.js";
 import { fetchGroupRoles, renderRoleList } from "./roles.js";
 
-const UPCOMING_EVENT_LIMIT = 10;
+const EVENT_HOURLY_LIMIT = 10;
+const EVENT_HOURLY_WINDOW_MS = 60 * 60 * 1000;
+const CREATE_RATE_LIMIT_BASE_KEY = "events:create";
+const HOURLY_HISTORY_STORAGE_KEY = "vrc-event-hourly-history-v1";
 let roleFetchToken = 0;
+let hourlyCountTimer = null;
+let createBlockTimer = null;
+let hourlyHistoryLoaded = false;
+
+function pruneHistoryEntries(entries) {
+  const cutoff = Date.now() - EVENT_HOURLY_WINDOW_MS;
+  return entries.filter(entry => entry >= cutoff);
+}
+
+function loadHourlyHistory() {
+  if (hourlyHistoryLoaded) {
+    return;
+  }
+  hourlyHistoryLoaded = true;
+  try {
+    const raw = localStorage.getItem(HOURLY_HISTORY_STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return;
+    }
+    const normalized = {};
+    Object.entries(parsed).forEach(([groupId, entries]) => {
+      if (!Array.isArray(entries)) {
+        return;
+      }
+      const cleaned = entries
+        .map(entry => Number(entry))
+        .filter(entry => Number.isFinite(entry));
+      const pruned = pruneHistoryEntries(cleaned);
+      if (pruned.length) {
+        normalized[groupId] = pruned;
+      }
+    });
+    state.event.hourlyCreateHistory = normalized;
+    saveHourlyHistory();
+  } catch (err) {
+    // Ignore storage errors.
+  }
+}
+
+function saveHourlyHistory() {
+  if (!hourlyHistoryLoaded) {
+    return;
+  }
+  try {
+    localStorage.setItem(HOURLY_HISTORY_STORAGE_KEY, JSON.stringify(state.event.hourlyCreateHistory));
+  } catch (err) {
+    // Ignore storage errors.
+  }
+}
+
+function ensureHourlyHistoryLoaded() {
+  if (!hourlyHistoryLoaded) {
+    loadHourlyHistory();
+  }
+}
+
+function getCurrentUserId() {
+  return state.user?.id || state.user?.userId || null;
+}
+
+function getHistoryKey(groupId) {
+  ensureHourlyHistoryLoaded();
+  if (!groupId) {
+    return null;
+  }
+  const userId = getCurrentUserId();
+  if (!userId) {
+    return null;
+  }
+  const key = `${userId}::${groupId}`;
+  if (!state.event.hourlyCreateHistory[key] && state.event.hourlyCreateHistory[groupId]) {
+    state.event.hourlyCreateHistory[key] = state.event.hourlyCreateHistory[groupId];
+    delete state.event.hourlyCreateHistory[groupId];
+    saveHourlyHistory();
+  }
+  return key;
+}
+
+function getCreateRateLimitKey(groupId) {
+  const userId = getCurrentUserId() || "user";
+  const groupKey = groupId || "group";
+  return `${CREATE_RATE_LIMIT_BASE_KEY}:${userId}:${groupKey}`;
+}
 
 function getRoleLabels() {
   return {
@@ -17,9 +107,212 @@ function getRoleLabels() {
   };
 }
 
+function getHourlyHistory(groupId) {
+  ensureHourlyHistoryLoaded();
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return [];
+  }
+  if (!state.event.hourlyCreateHistory[key]) {
+    state.event.hourlyCreateHistory[key] = [];
+  }
+  return state.event.hourlyCreateHistory[key];
+}
+
+function pruneHourlyHistory(groupId) {
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return [];
+  }
+  const history = getHourlyHistory(groupId);
+  const next = pruneHistoryEntries(history);
+  if (next.length !== history.length) {
+    state.event.hourlyCreateHistory[key] = next;
+    saveHourlyHistory();
+  } else if (state.event.hourlyCreateHistory[key] !== history) {
+    state.event.hourlyCreateHistory[key] = history;
+  }
+  return next;
+}
+
+function getHourlyCount(groupId) {
+  if (!groupId) {
+    return 0;
+  }
+  return pruneHourlyHistory(groupId).length;
+}
+
+function recordHourlyEvent(groupId, timestamp = Date.now()) {
+  if (!groupId || !getCurrentUserId()) {
+    return;
+  }
+  const history = getHourlyHistory(groupId);
+  history.push(timestamp);
+  pruneHourlyHistory(groupId);
+  saveHourlyHistory();
+}
+
+function getEventCreatedAtMs(event) {
+  if (!event) {
+    return null;
+  }
+  const value = event.createdAtUtc || event.createdAt || event.created_at || null;
+  if (!value) {
+    return null;
+  }
+  const ms = Date.parse(value);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+function mergeHourlyHistory(groupId, timestamps) {
+  if (!groupId || !getCurrentUserId() || !Array.isArray(timestamps) || !timestamps.length) {
+    return;
+  }
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return;
+  }
+  const history = getHourlyHistory(groupId);
+  const cutoff = Date.now() - EVENT_HOURLY_WINDOW_MS;
+  const set = new Set(history);
+  let changed = false;
+  timestamps.forEach(entry => {
+    if (!Number.isFinite(entry) || entry < cutoff) {
+      return;
+    }
+    if (!set.has(entry)) {
+      set.add(entry);
+      changed = true;
+    }
+  });
+  if (!changed) {
+    pruneHourlyHistory(groupId);
+    return;
+  }
+  const merged = pruneHistoryEntries(Array.from(set).sort((a, b) => a - b));
+  state.event.hourlyCreateHistory[key] = merged;
+  saveHourlyHistory();
+}
+
+function mergeHourlyHistoryFromEvents(groupId, events) {
+  if (!Array.isArray(events) || !events.length) {
+    return;
+  }
+  const userId = getCurrentUserId();
+  if (!userId) {
+    return;
+  }
+  const timestamps = events
+    .filter(event => {
+      const createdById = event?.createdById || event?.creatorId || event?.createdBy || null;
+      if (!createdById) {
+        return false;
+      }
+      return createdById === userId;
+    })
+    .map(event => getEventCreatedAtMs(event))
+    .filter(entry => Number.isFinite(entry));
+  mergeHourlyHistory(groupId, timestamps);
+}
+
+function getNextHourlyExpiry(groupId) {
+  const history = pruneHourlyHistory(groupId);
+  if (!history.length) {
+    return null;
+  }
+  const earliest = Math.min(...history);
+  return earliest + EVENT_HOURLY_WINDOW_MS;
+}
+
+function getHourlyLimitRemainingMs(groupId) {
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return 0;
+  }
+  const until = state.event.hourlyLimitUntil[key] || 0;
+  if (!until) {
+    return 0;
+  }
+  const remaining = until - Date.now();
+  if (remaining <= 0) {
+    delete state.event.hourlyLimitUntil[key];
+    return 0;
+  }
+  return remaining;
+}
+
+function setHourlyLimitUntil(groupId, until) {
+  const key = getHistoryKey(groupId);
+  if (!key || !until) {
+    return;
+  }
+  state.event.hourlyLimitUntil[key] = until;
+}
+
+function clearHourlyLimit(groupId) {
+  const key = getHistoryKey(groupId);
+  if (!key) {
+    return;
+  }
+  delete state.event.hourlyLimitUntil[key];
+}
+
+function getCreateBlockRemainingMs(groupId) {
+  const hourlyRemaining = getHourlyLimitRemainingMs(groupId);
+  const backoffRemaining = getRateLimitRemainingMs(getCreateRateLimitKey(groupId));
+  return Math.max(hourlyRemaining, backoffRemaining);
+}
+
+function scheduleHourlyCountUpdate(groupId) {
+  if (hourlyCountTimer) {
+    window.clearTimeout(hourlyCountTimer);
+    hourlyCountTimer = null;
+  }
+  if (!groupId) {
+    return;
+  }
+  const nextExpiry = getNextHourlyExpiry(groupId);
+  if (!nextExpiry) {
+    return;
+  }
+  const delayMs = Math.max(0, nextExpiry - Date.now());
+  hourlyCountTimer = window.setTimeout(() => {
+    renderUpcomingEventCount();
+    updateEventCreateDisabled();
+  }, delayMs + 50);
+}
+
+function scheduleCreateBlockTimer(groupId) {
+  if (createBlockTimer) {
+    window.clearTimeout(createBlockTimer);
+    createBlockTimer = null;
+  }
+  const remaining = getCreateBlockRemainingMs(groupId);
+  if (remaining <= 0) {
+    return;
+  }
+  createBlockTimer = window.setTimeout(() => {
+    updateEventCreateDisabled();
+  }, remaining + 50);
+}
+
+function handleCreateRateLimit(groupId) {
+  const count = getHourlyCount(groupId);
+  const nextExpiry = count > 0 ? getNextHourlyExpiry(groupId) : null;
+  if (nextExpiry) {
+    setHourlyLimitUntil(groupId, nextExpiry);
+  } else {
+    registerRateLimit(getCreateRateLimitKey(groupId));
+  }
+  scheduleCreateBlockTimer(groupId);
+}
+
 function updateEventCreateDisabled() {
+  const groupId = dom.eventGroup?.value;
+  const isRateLimited = getCreateBlockRemainingMs(groupId) > 0;
+  state.event.createBlocked = isRateLimited;
   dom.eventCreate.disabled = !state.user
-    || state.event.createBlocked
+    || isRateLimited
     || state.event.createInProgress
     || state.app?.updateAvailable;
 }
@@ -95,65 +388,52 @@ function renderUpcomingEventCount() {
   if (!dom.eventUpcomingCount) {
     return;
   }
+  ensureHourlyHistoryLoaded();
   if (dom.eventCountRefresh) {
     dom.eventCountRefresh.disabled = !state.user || !dom.eventGroup.value;
   }
-  const groupName = getGroupName(dom.eventGroup.value);
-  const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
-  if (typeof state.event.upcomingCount === "number") {
-    dom.eventUpcomingCount.textContent = t("events.upcomingCountStatus", {
-      group: groupName || t("events.upcomingCountGroupFallback"),
-      count: state.event.upcomingCount,
-      limit
-    });
+  const groupId = dom.eventGroup.value;
+  if (!groupId) {
+    dom.eventUpcomingCount.textContent = t("events.upcomingCountUnknown");
     return;
   }
-  dom.eventUpcomingCount.textContent = t("events.upcomingCountUnknown");
+  const groupName = getGroupName(groupId);
+  const count = getHourlyCount(groupId);
+  state.event.upcomingCount = count;
+  dom.eventUpcomingCount.textContent = t("events.upcomingCountStatus", {
+    group: groupName || t("events.upcomingCountGroupFallback"),
+    count,
+    limit: EVENT_HOURLY_LIMIT
+  });
+  scheduleHourlyCountUpdate(groupId);
 }
 
 export async function refreshUpcomingEventCount(api, options = {}) {
-  if (!api?.getUpcomingEventCount || !dom.eventGroup) {
-    state.event.upcomingCount = null;
-    state.event.createBlocked = false;
-    renderUpcomingEventCount();
-    updateEventCreateDisabled();
-    return null;
-  }
   const groupId = dom.eventGroup.value;
   if (!groupId) {
     state.event.upcomingCount = null;
-    state.event.createBlocked = false;
     renderUpcomingEventCount();
     updateEventCreateDisabled();
     return null;
   }
-  if (options.skipFetch) {
-    renderUpcomingEventCount();
-    return state.event.upcomingCount;
-  }
-  try {
-    const result = await api.getUpcomingEventCount({ groupId });
-    const nextCount = Number(result?.count);
-    const nextLimit = Number(result?.limit) || UPCOMING_EVENT_LIMIT;
-    state.event.upcomingCount = Number.isFinite(nextCount) ? nextCount : null;
-    state.event.upcomingLimit = nextLimit;
-    if (Number.isFinite(nextCount)) {
-      if (nextCount >= nextLimit) {
-        state.event.createBlocked = true;
-      } else if (options.allowUnblock !== false) {
-        state.event.createBlocked = false;
-      }
-    } else if (options.allowUnblock !== false) {
-      state.event.createBlocked = false;
+  const useServer = options.useServer !== false;
+  if (useServer && api?.listGroupEvents) {
+    try {
+      const events = await api.listGroupEvents({
+        groupId,
+        upcomingOnly: true,
+        includeNonEditable: true
+      });
+      mergeHourlyHistoryFromEvents(groupId, events);
+    } catch (err) {
+      // Ignore list failures and keep local history.
     }
-    renderUpcomingEventCount();
-    updateEventCreateDisabled();
-    return state.event.upcomingCount;
-  } catch (err) {
-    state.event.upcomingCount = null;
-    renderUpcomingEventCount();
-    return null;
   }
+  const count = getHourlyCount(groupId);
+  state.event.upcomingCount = count;
+  renderUpcomingEventCount();
+  updateEventCreateDisabled();
+  return count;
 }
 
 export function renderUpcomingEventCountLabel() {
@@ -363,10 +643,8 @@ export async function handleEventCreate(api) {
     return { success: false, message: t("events.selectGroupError") };
   }
   enforceGroupAccess(dom.eventAccess, groupId);
-  if (state.event.createBlocked) {
-    const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
-    const groupName = getGroupName(groupId) || t("events.upcomingCountGroupFallback");
-    const message = t("events.upcomingLimitReached", { group: groupName, limit });
+  if (getCreateBlockRemainingMs(groupId) > 0) {
+    const message = t("events.upcomingLimitReached");
     showToast(message, true, { duration: 8000 });
     return { success: false, message, toastShown: true };
   }
@@ -483,31 +761,37 @@ export async function handleEventCreate(api) {
       eventData
     });
     if (!result?.ok) {
-      const status = result?.error?.status;
-      if (status === 429 || result?.error?.code === "UPCOMING_LIMIT") {
-        const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
-        const groupName = getGroupName(groupId) || t("events.upcomingCountGroupFallback");
-        state.event.createBlocked = true;
+      if (isRateLimitError(result?.error)) {
         state.event.createInProgress = false;
+        handleCreateRateLimit(groupId);
         updateEventCreateDisabled();
-        showToast(t("events.upcomingLimitError", { group: groupName, limit }), true, { duration: 8000 });
-        await refreshUpcomingEventCount(api, { allowUnblock: false });
-        return { success: false, message: t("events.upcomingLimitError", { group: groupName, limit }), toastShown: true };
+        showToast(t("events.upcomingLimitError"), true, { duration: 8000 });
+        return { success: false, message: t("events.upcomingLimitError"), toastShown: true };
       }
       state.event.createInProgress = false;
       updateEventCreateDisabled();
       return { success: false, message: result?.error?.message || "Could not create event." };
     }
+    clearRateLimit(getCreateRateLimitKey(groupId));
+    clearHourlyLimit(groupId);
+    recordHourlyEvent(groupId);
     state.event.createInProgress = false;
     updateEventCreateDisabled();
-    const count = await refreshUpcomingEventCount(api);
+    const count = await refreshUpcomingEventCount(api, { useServer: false });
     const groupName = getGroupName(groupId) || t("events.upcomingCountGroupFallback");
-    const limit = state.event.upcomingLimit || UPCOMING_EVENT_LIMIT;
     const message = typeof count === "number"
-      ? t("events.upcomingCountToast", { group: groupName, count, limit })
+      ? t("events.upcomingCountToast", { group: groupName, count, limit: EVENT_HOURLY_LIMIT })
       : t("events.created");
     return { success: true, message };
   } catch (err) {
+    if (isRateLimitError(err)) {
+      state.event.createInProgress = false;
+      handleCreateRateLimit(groupId);
+      updateEventCreateDisabled();
+      const message = t("events.upcomingLimitError");
+      showToast(message, true, { duration: 8000 });
+      return { success: false, message, toastShown: true };
+    }
     state.event.createInProgress = false;
     updateEventCreateDisabled();
     return { success: false, message: err?.message || "Could not create event." };
