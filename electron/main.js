@@ -1425,7 +1425,8 @@ ipcMain.handle("events:create", async (_, payload) => {
       body: requestBody
     });
     debugApiResponse("createGroupCalendarEvent", response);
-    return { ok: true };
+    const eventId = getEventId(response.data);
+    return { ok: true, eventId };
   } catch (err) {
     debugApiResponse("createGroupCalendarEvent", null, err);
     const status = err?.response?.status || null;
