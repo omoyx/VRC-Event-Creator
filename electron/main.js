@@ -227,6 +227,10 @@ const RESERVED_THEME_PRESET_KEYS = new Set(["default", "wired", "custom", "blue"
 const groupPermissionCache = new Map();
 const groupPrivacyCache = new Map();
 const groupRolesCache = new Map();
+const FAILED_GET_CACHE_MS = 15 * 60 * 1000;
+const GET_DEDUPE_WINDOW_MS = 10 * 1000;
+const failedGetRequests = new Map();
+const pendingGetRequests = new Map();
 
 function resolveDataDir() {
   const override = process.env.VRC_EVENT_DATA_DIR;
@@ -606,6 +610,8 @@ function resetClient() {
   groupPermissionCache.clear();
   groupPrivacyCache.clear();
   groupRolesCache.clear();
+  failedGetRequests.clear();
+  pendingGetRequests.clear();
 }
 
 async function clearSession() {
@@ -620,7 +626,12 @@ async function clearSession() {
 async function getCurrentUser() {
   debugApiCall("getCurrentUser", {});
   try {
-    const res = await vrchat.getCurrentUser();
+    const res = await requestGet(
+      "getCurrentUser",
+      null,
+      () => vrchat.getCurrentUser(),
+      { cacheFailures: false }
+    );
     debugApiResponse("getCurrentUser", res);
     if (typeof res.data === "string" || res.data?.error) {
       debugLog("getCurrentUser", "Invalid response data type or error in data");
@@ -766,10 +777,14 @@ function buildEventTimes({ selectedDateIso, manualDate, manualTime, timezone, du
 
 async function findConflictingEvent(groupId, startsAtUtc) {
   debugApiCall("getGroupCalendarEvents (findConflict)", { groupId, n: 100 });
-  const currentEvents = await vrchat.getGroupCalendarEvents({
-    path: { groupId },
-    query: { n: 100 }
-  });
+  const currentEvents = await requestGet(
+    "getGroupCalendarEvents",
+    { path: { groupId }, query: { n: 100 } },
+    () => vrchat.getGroupCalendarEvents({
+      path: { groupId },
+      query: { n: 100 }
+    })
+  );
   debugApiResponse("getGroupCalendarEvents (findConflict)", currentEvents);
   const results = getCalendarEventList(currentEvents.data);
   const startUtc = DateTime.fromISO(startsAtUtc);
@@ -792,10 +807,14 @@ async function findConflictingEvent(groupId, startsAtUtc) {
 
 async function getUpcomingEventCount(groupId) {
   debugApiCall("getGroupCalendarEvents (countUpcoming)", { groupId, n: 100 });
-  const currentEvents = await vrchat.getGroupCalendarEvents({
-    path: { groupId },
-    query: { n: 100 }
-  });
+  const currentEvents = await requestGet(
+    "getGroupCalendarEvents",
+    { path: { groupId }, query: { n: 100 } },
+    () => vrchat.getGroupCalendarEvents({
+      path: { groupId },
+      query: { n: 100 }
+    })
+  );
   debugApiResponse("getGroupCalendarEvents (countUpcoming)", currentEvents);
   const results = getCalendarEventList(currentEvents.data);
   const now = DateTime.utc();
@@ -967,12 +986,103 @@ function parseEventDateValue(value) {
   return null;
 }
 
+function getEventCreatedValue(event) {
+  return event?.createdAt
+    || event?.created_at
+    || event?.event?.createdAt
+    || event?.event?.created_at
+    || null;
+}
+
+function getEventCreatedByValue(event) {
+  return event?.createdById
+    || event?.createdBy
+    || event?.creatorId
+    || event?.userId
+    || event?.event?.createdById
+    || event?.event?.createdBy
+    || event?.event?.creatorId
+    || event?.event?.userId
+    || null;
+}
+
+function getRequestStatus(err) {
+  return err?.response?.status || err?.status || null;
+}
+
+function buildGetCacheKey(name, options) {
+  const payload = {
+    path: options?.path || null,
+    query: options?.query || null
+  };
+  return `${name}:${JSON.stringify(payload)}`;
+}
+
+function getCachedGetFailure(key) {
+  const entry = failedGetRequests.get(key);
+  if (!entry) {
+    return null;
+  }
+  const age = Date.now() - entry.timestamp;
+  if (age > FAILED_GET_CACHE_MS) {
+    failedGetRequests.delete(key);
+    return null;
+  }
+  return entry;
+}
+
+function recordFailedGet(key, status) {
+  failedGetRequests.set(key, { status, timestamp: Date.now() });
+}
+
+async function requestGet(name, options, requestFn, config = {}) {
+  const cacheFailures = config.cacheFailures !== false;
+  const key = buildGetCacheKey(name, options);
+  if (cacheFailures) {
+    const cached = getCachedGetFailure(key);
+    if (cached) {
+      const error = new Error("Request blocked due to recent 403/404 response.");
+      error.status = cached.status;
+      error.code = "CACHED_GET";
+      throw error;
+    }
+  }
+  const now = Date.now();
+  const pending = pendingGetRequests.get(key);
+  if (pending && now - pending.startedAt < GET_DEDUPE_WINDOW_MS) {
+    return pending.promise;
+  }
+  const promise = (async () => {
+    try {
+      return await requestFn();
+    } catch (err) {
+      const status = getRequestStatus(err);
+      if (cacheFailures && (status === 403 || status === 404)) {
+        recordFailedGet(key, status);
+      }
+      throw err;
+    }
+  })();
+  pendingGetRequests.set(key, { promise, startedAt: now });
+  setTimeout(() => {
+    const entry = pendingGetRequests.get(key);
+    if (entry && entry.startedAt === now) {
+      pendingGetRequests.delete(key);
+    }
+  }, GET_DEDUPE_WINDOW_MS);
+  return promise;
+}
+
 async function ensureCalendarPermission(groupId) {
   let permissions = groupPermissionCache.get(groupId);
   if (!permissions) {
     try {
       debugApiCall("getGroup (ensureCalendarPermission)", { groupId });
-      const res = await vrchat.getGroup({ path: { groupId } });
+      const res = await requestGet(
+        "getGroup",
+        { path: { groupId } },
+        () => vrchat.getGroup({ path: { groupId } })
+      );
       debugApiResponse("getGroup (ensureCalendarPermission)", res);
       permissions = res.data?.myMember?.permissions || [];
     } catch (err) {
@@ -1147,7 +1257,11 @@ ipcMain.handle("auth:twofactor:submit", async (_, code) => {
 ipcMain.handle("groups:list", async () => {
   debugApiCall("getUserGroups", {});
   const user = await ensureUser();
-  const groupsResponse = await vrchat.getUserGroups({ path: { userId: user.id } });
+  const groupsResponse = await requestGet(
+    "getUserGroups",
+    { path: { userId: user.id } },
+    () => vrchat.getUserGroups({ path: { userId: user.id } })
+  );
   debugApiResponse("getUserGroups", groupsResponse);
   const limitedGroups = groupsResponse.data || [];
   const enriched = [];
@@ -1164,7 +1278,11 @@ ipcMain.handle("groups:list", async () => {
     if (!hasPermissions || !hasPrivacy) {
       try {
         debugApiCall("getGroup", { groupId });
-        const groupRes = await vrchat.getGroup({ path: { groupId } });
+        const groupRes = await requestGet(
+          "getGroup",
+          { path: { groupId } },
+          () => vrchat.getGroup({ path: { groupId } })
+        );
         debugApiResponse("getGroup", groupRes);
         permissions = groupRes.data?.myMember?.permissions || [];
         privacy = groupRes.data?.privacy;
@@ -1196,7 +1314,11 @@ ipcMain.handle("groups:roles", async (_, payload) => {
   let roles = groupRolesCache.get(groupId);
   if (!roles) {
     debugApiCall("getGroupRoles", { groupId });
-    const response = await vrchat.getGroupRoles({ path: { groupId } });
+    const response = await requestGet(
+      "getGroupRoles",
+      { path: { groupId } },
+      () => vrchat.getGroupRoles({ path: { groupId } })
+    );
     debugApiResponse("getGroupRoles", response);
     roles = response.data || [];
     groupRolesCache.set(groupId, roles);
@@ -1329,17 +1451,21 @@ ipcMain.handle("events:countUpcoming", async (_, payload) => {
 });
 
 ipcMain.handle("events:listGroup", async (_, payload) => {
-  const { groupId, upcomingOnly = true } = payload || {};
+  const { groupId, upcomingOnly = true, includeNonEditable = false } = payload || {};
   if (!groupId) {
     throw new Error("Missing group.");
   }
   await ensureUser();
   await ensureCalendarPermission(groupId);
   debugApiCall("getGroupCalendarEvents (listGroup)", { groupId, n: 100, upcomingOnly });
-  const response = await vrchat.getGroupCalendarEvents({
-    path: { groupId },
-    query: { n: 100 }
-  });
+  const response = await requestGet(
+    "getGroupCalendarEvents",
+    { path: { groupId }, query: { n: 100 } },
+    () => vrchat.getGroupCalendarEvents({
+      path: { groupId },
+      query: { n: 100 }
+    })
+  );
   debugApiResponse("getGroupCalendarEvents (listGroup)", response);
   const results = getCalendarEventList(response.data);
   const now = DateTime.utc();
@@ -1351,7 +1477,7 @@ ipcMain.handle("events:listGroup", async (_, payload) => {
       const editableFlag = getEventField(event, "canEdit")
         ?? getEventField(event, "isEditable")
         ?? getEventField(event, "editable");
-      if (editableFlag === false) {
+      if (!includeNonEditable && editableFlag === false) {
         return false;
       }
       if (upcomingOnly) {
@@ -1362,10 +1488,14 @@ ipcMain.handle("events:listGroup", async (_, payload) => {
       .map(event => {
         const startValue = getEventStartValue(event);
         const endValue = getEventEndValue(event);
+        const createdValue = getEventCreatedValue(event);
+        const createdByValue = getEventCreatedByValue(event);
         const startsAt = parseEventDateValue(startValue);
         const endsAt = parseEventDateValue(endValue);
+        const createdAt = parseEventDateValue(createdValue);
         const startsAtUtc = startsAt?.isValid ? startsAt.toUTC().toISO() : null;
         const endsAtUtc = endsAt?.isValid ? endsAt.toUTC().toISO() : null;
+        const createdAtUtc = createdAt?.isValid ? createdAt.toUTC().toISO() : null;
         let durationMinutes = null;
         if (startsAt?.isValid && endsAt?.isValid) {
           durationMinutes = Math.max(1, Math.round(endsAt.diff(startsAt, "minutes").minutes));
@@ -1389,6 +1519,8 @@ ipcMain.handle("events:listGroup", async (_, payload) => {
           imageUrl: getEventImageUrl(event),
           startsAtUtc,
           endsAtUtc,
+          createdAtUtc,
+          createdById: typeof createdByValue === "string" ? createdByValue : null,
           durationMinutes,
           timezone: getEventField(event, "timezone") || null
       };
@@ -1484,13 +1616,17 @@ ipcMain.handle("files:listGallery", async (_, payload) => {
   const limit = Math.max(1, Math.min(100, Number(payload?.limit) || 40));
   const offset = Math.max(0, Number(payload?.offset) || 0);
   debugApiCall("getFiles (listGallery)", { tag: "gallery", n: limit, offset });
-  const res = await vrchat.getFiles({
-    query: {
-      tag: "gallery",
-      n: limit,
-      offset
-    }
-  });
+  const res = await requestGet(
+    "getFiles",
+    { query: { tag: "gallery", n: limit, offset } },
+    () => vrchat.getFiles({
+      query: {
+        tag: "gallery",
+        n: limit,
+        offset
+      }
+    })
+  );
   debugApiResponse("getFiles (listGallery)", res);
   const files = Array.isArray(res.data) ? res.data : [];
   return files.map(file => {
@@ -1512,13 +1648,17 @@ ipcMain.handle("files:uploadGallery", async () => {
     await ensureUser();
 
     debugApiCall("getFiles (uploadGallery limitCheck)", { tag: "gallery", n: 64, offset: 0 });
-    const limitCheck = await vrchat.getFiles({
-      query: {
-        tag: "gallery",
-        n: 64,
-        offset: 0
-      }
-    });
+    const limitCheck = await requestGet(
+      "getFiles",
+      { query: { tag: "gallery", n: 64, offset: 0 } },
+      () => vrchat.getFiles({
+        query: {
+          tag: "gallery",
+          n: 64,
+          offset: 0
+        }
+      })
+    );
     debugApiResponse("getFiles (uploadGallery limitCheck)", limitCheck);
     const existingFiles = Array.isArray(limitCheck.data) ? limitCheck.data : [];
     if (existingFiles.length >= 64) {

@@ -2,6 +2,27 @@
 
 All notable changes to VRChat Event Creator will be documented in this file.
 
+## [0.9.18] - 2026-01-06
+
+### Added
+- Request caching system to prevent redundant API calls (15-minute cache for failed 403/404 requests)
+- Request deduplication for concurrent identical GET requests (10-second window)
+- Hourly event creation tracking with persistent storage (tracks last hour of activity)
+- Event metadata tracking (createdAt, createdById) for better history management
+- Rate limiting protection for gallery uploads
+- Client-side enforcement of VRChat's 10 events per group per hour limit
+
+### Changed
+- Event creation limit changed from "10 upcoming events" to "10 events per hour per group"
+- Upcoming event counter now shows hourly creation count instead of total upcoming events
+- Event creation now blocks temporarily when hourly limit is reached
+- History merging from server events to maintain accurate hourly counts
+
+### Fixed
+- Reduced unnecessary API calls through intelligent caching and deduplication
+- Improved rate limit error handling across event creation and gallery uploads
+- Better user feedback when hitting rate limits
+
 ## [0.9.17] - 2026-01-06
 
 ### Added
