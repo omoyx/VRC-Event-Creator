@@ -44,7 +44,9 @@
       "oneClick": true,
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "installerLanguages": ["en_US", "de_DE", "fr_FR", "es_ES", "ja_JP", "ko_KR", "pt_BR", "ru_RU", "zh_CN"],
+      "language": "0000"
     },
     "linux": {
       "target": "AppImage",
