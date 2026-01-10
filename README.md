@@ -30,10 +30,12 @@ Create and save per-group event templates, generate upcoming event dates from si
 ## Features
 - Profiles/templates that auto-fill event details per group.
 - Recurring pattern generator with upcoming date lists and manual date/time fallback.
+- Event automation system (experimental) - automatically post events based on profile patterns.
 - Event creation wizard for group calendar events.
 - Modify Events view for upcoming events (grid + edit modal).
 - Theme Studio with presets and full UI color control (supports #RRGGBBAA).
 - Gallery picker and upload for image IDs.
+- Minimize to system tray.
 - Localization with first-run language selection (en, fr, es, de, ja, zh, pt, ko, ru).
 
 ## Download
@@ -47,6 +49,8 @@ The app stores its files in the Electron user data directory (shown in the Setti
 - `cache.json` (session tokens)
 - `settings.json` (app settings)
 - `themes.json` (theme presets and custom colors)
+- `pending-events.json` (automation queue)
+- `automation-state.json` (automation tracking)
 
 You can override the data directory with the `VRC_EVENT_DATA_DIR` environment variable.
 On first launch, the app will try to import an existing `profiles.json` from the project folder.
@@ -59,7 +63,8 @@ __**Do not share cache files or application data folders.**__
 - Duration uses DD:HH:MM and caps at 31 days.
 - Tags are limited to 5 and languages are limited to 3.
 - Gallery uploads are limited to PNG/JPG, 64-2048 px, under 10 MB, and 64 images per account.
-- VRChat currently only allows up to 10 upcoming events at a time.
+- VRChat limits event creation to 10 events per-hour per-person per-group.
+- Event automation requires the app to be running. Missed automations can be managed in Modify Events.
 
 ## Troubleshooting
 - Login issues: delete `cache.json` and sign in again (use the data folder shown in Settings > Application Info).

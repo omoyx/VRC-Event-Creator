@@ -30,14 +30,13 @@ export const zh = {
     codeLabel: "代码",
     submit: "提交"
   },
-    languageSetup: {
+  languageSetup: {
     title: "选择语言",
     subtitle: "选择你的语言以开始。",
     hint: "你可以随时在设置中更改。",
     continue: "继续"
   },
-
-    gallery: {
+  gallery: {
     title: "图库",
     subtitle: "选择一张图库图片以使用其文件ID。",
     empty: "未找到图库图片。",
@@ -55,8 +54,6 @@ export const zh = {
     loadMore: "加载更多",
     loadFailed: "无法加载图库。"
   },
-
-
   settings: {
     title: "设置",
     theme: {
@@ -213,8 +210,6 @@ export const zh = {
       loadFailed: "无法加载模式日期。"
     },
     profileHint: "模板可选。可用于默认值，或全部手动创建。",
-    selectGroup: "选择群组",
-    selectGroupPlaceholder: "选择一个群组",
     loadProfile: "加载模板（可选）",
     loadProfilePlaceholder: "选择一个模板",
     clearProfile: "清除模板",
@@ -223,16 +218,7 @@ export const zh = {
     dateSourcePattern: "来自模板模式",
     dateOption: "选择日期",
     patternDateLabel: "{label} - {date}",
-    manualDate: "日期",
-    manualTime: "时间",
-    timezone: "时区",
-    duration: "时长 (DD:HH:MM)",
-    eventName: "活动名称",
-    description: "描述",
-    category: "类别",
-    tags: "标签（最多5）",
     access: "访问",
-    accessType: "访问类型",
     roleRestrictions: {
       title: "角色限制",
       hint: "可选 - 启用后，仅所选的群组角色可以加入。",
@@ -242,13 +228,6 @@ export const zh = {
       roles: "角色",
       noRoles: "该群组没有可用的角色。"
     },
-    imageId: "图片ID（可选）",
-    imageIdPlaceholder: "例如：file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "发送通知",
-    languages: "语言（最多3种）",
-    languagesHint: "已选择 {count} 项",
-    filterLanguages: "筛选语言...",
-    platforms: "平台",
     manualProfileOption: "手动（无模板）",
     pastDateError: "不能选择过去的日期。",
     futureDateError: "活动最多只能提前 1 年安排。",
@@ -280,8 +259,7 @@ export const zh = {
     title: "编辑活动",
     subtitle: "编辑或删除群组即将到来的活动。",
     groupLabel: "群组",
-    selectGroupPlaceholder: "选择一个群组",
-    refresh: "刷新",
+    showPending: "显示待处理",
     countEmpty: "无法获取即将到来活动。",
     countGroupFallback: "该群组",
     countStatus: "{group} 的即将到来活动：{count}。",
@@ -290,29 +268,14 @@ export const zh = {
     eventImage: "活动图片",
     noImage: "无图片",
     untitled: "未命名活动",
-    delete: "删除活动",
     profileLabel: "加载模板（可选）",
     profileSelect: "选择一个模板",
     profileLoad: "加载",
     profileSelectError: "请选择要加载的模板。",
     profileLoadFailed: "无法加载模板默认值。",
     profileLoaded: "模板默认值已加载。",
-    eventName: "活动名称",
-    description: "描述",
-    category: "类别",
-    tags: "标签（最多5）",
-    accessType: "访问类型",
-    imageId: "图片ID（可选）",
-    imageIdPlaceholder: "例如：file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "发送通知",
     manualDate: "更改日期",
     manualTime: "更改时间",
-    timezone: "时区",
-    duration: "时长 (DD:HH:MM)",
-    languages: "语言（最多3种）",
-    languagesHint: "已选择 {count} 项",
-    filterLanguages: "筛选语言...",
-    platforms: "平台",
     modal: {
       title: "编辑活动",
       subtitle: "只有点击“保存”时更改才会生效。"
@@ -370,39 +333,20 @@ export const zh = {
       groupAccess: "选择具有日历权限的群组。",
       patternsInfo: "模式用于预生成未来日期。"
     },
-    selectGroup: "选择群组",
-    selectGroupPlaceholder: "选择一个群组",
     existingProfile: "已有模板",
     existingProfilePlaceholder: "选择一个模板",
     noProfiles: "此群组暂无模板",
     newButton: "新建模板",
-    editButton: "编辑",
-    deleteButton: "删除",
     saveButton: "保存模板",
-    save: "保存",
     displayName: "模板名称",
     displayNamePlaceholder: "社区聚会模板",
-    eventName: "活动名称",
-    description: "描述",
-    category: "类别",
-    tags: "标签（最多5）",
     access: "访问",
-    accessType: "访问类型",
-    imageId: "图片ID（可选）",
-    imageIdPlaceholder: "例如：file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    duration: "时长 (DD:HH:MM)",
     durationDefault: "默认时长 (DD:HH:MM)",
-    timezone: "时区",
     dateMode: "日期模式",
     dateModePattern: "基于模式",
     dateModeManual: "仅手动",
     dateModeBoth: "模式 + 手动",
-    sendNotification: "发送通知",
     sendNotificationDefault: "默认发送通知",
-    languages: "语言（最多3种）",
-    languagesHint: "已选择 {count} 项",
-    filterLanguages: "筛选语言...",
-    platforms: "平台",
     patterns: {
       title: "重复模式",
       addButton: "添加模式",
@@ -423,21 +367,22 @@ export const zh = {
         nth2: "每月第2个[weekday]",
         nth3: "每月第3个[weekday]",
         nth4: "每月第4个[weekday]",
-        last: "每月最后一个[weekday]"
+        last: "每月最后一个[weekday]",
+        annual: "每年[日期]"
       },
       format: {
         every: "每周{weekday} {time}",
         everyOther: "每隔一周{weekday} {time}",
         last: "最后一个{weekday} {time}",
-        nth: "第{ordinal}个{weekday} {time}"
+        nth: "第{ordinal}个{weekday} {time}",
+        annual: "每年{month}{day} {time}"
       },
       ordinal1: "1",
       ordinal2: "2",
       ordinal3: "3",
       ordinal4: "4",
       date: "日期",
-      selectMonth: "选择月份",
-      annual: "每年[日期]"
+      selectMonth: "选择月份"
     },
     automation: {
       title: "自动化（实验性）",
@@ -456,8 +401,8 @@ export const zh = {
       minutes: "分钟",
       monthlyHint: "每月在此日期发布活动：",
       monthlyDay: "月份日期",
-      monthlyHour: "小时",
-      monthlyMinute: "分钟",
+      monthlyDayHint: "29-31日将使用较短月份的最后一天",
+      monthlyTime: "时间",
       repeatMode: "重复",
       repeatModes: {
         indefinite: "无限期",
@@ -546,6 +491,20 @@ export const zh = {
       saturday: "周六",
       sunday: "周日"
     },
+    months: {
+      january: "一月",
+      february: "二月",
+      march: "三月",
+      april: "四月",
+      may: "五月",
+      june: "六月",
+      july: "七月",
+      august: "八月",
+      september: "九月",
+      october: "十月",
+      november: "十一月",
+      december: "十二月"
+    },
     fields: {
       eventName: "活动名称",
       description: "描述",
@@ -576,7 +535,3 @@ export const zh = {
     continue: "仍然创建"
   }
 };
-
-
-
-

@@ -30,14 +30,13 @@ export const fr = {
     codeLabel: "Code de vérification",
     submit: "Envoyer"
   },
-    languageSetup: {
+  languageSetup: {
     title: "Choisir la langue",
     subtitle: "Sélectionnez votre langue pour commencer.",
     hint: "Vous pouvez modifier cela à tout moment dans les paramètres.",
     continue: "Continuer"
   },
-
-    gallery: {
+  gallery: {
     title: "Galerie",
     subtitle: "Sélectionnez une image de la galerie pour utiliser son ID de fichier.",
     empty: "Aucune image de galerie trouvée.",
@@ -55,8 +54,6 @@ export const fr = {
     loadMore: "Charger plus",
     loadFailed: "Impossible de charger la galerie."
   },
-
-
   settings: {
     title: "Paramètres",
     theme: {
@@ -370,21 +367,22 @@ export const fr = {
         nth2: "Chaque 2e [jour] du mois",
         nth3: "Chaque 3e [jour] du mois",
         nth4: "Chaque 4e [jour] du mois",
-        last: "Chaque dernier [jour] du mois"
+        last: "Chaque dernier [jour] du mois",
+        annual: "Chaque année le [date]"
       },
       format: {
         every: "Chaque {weekday} à {time}",
         everyOther: "Un {weekday} sur deux à {time}",
         last: "Dernier {weekday} à {time}",
-        nth: "Le {ordinal} {weekday} à {time}"
+        nth: "Le {ordinal} {weekday} à {time}",
+        annual: "Chaque année le {month} {day} à {time}"
       },
       ordinal1: "1er",
       ordinal2: "2e",
       ordinal3: "3e",
       ordinal4: "4e",
       date: "Date",
-      selectMonth: "Sélectionner le mois",
-      annual: "Chaque année le [date]"
+      selectMonth: "Sélectionner le mois"
     },
     automation: {
       title: "Automatisation (Expérimental)",
@@ -403,8 +401,8 @@ export const fr = {
       minutes: "Minutes",
       monthlyHint: "Publier les événements ce jour chaque mois :",
       monthlyDay: "Jour du mois",
-      monthlyHour: "Heure",
-      monthlyMinute: "Minute",
+      monthlyDayHint: "Les jours 29-31 utiliseront le dernier jour des mois plus courts",
+      monthlyTime: "Heure",
       repeatMode: "Répéter",
       repeatModes: {
         indefinite: "Indéfiniment",
@@ -493,6 +491,20 @@ export const fr = {
       saturday: "Samedi",
       sunday: "Dimanche"
     },
+    months: {
+      january: "Janvier",
+      february: "Février",
+      march: "Mars",
+      april: "Avril",
+      may: "Mai",
+      june: "Juin",
+      july: "Juillet",
+      august: "Août",
+      september: "Septembre",
+      october: "Octobre",
+      november: "Novembre",
+      december: "Décembre"
+    },
     fields: {
       eventName: "Nom de l'événement",
       description: "Description",
@@ -523,7 +535,3 @@ export const fr = {
     continue: "Créer quand même"
   }
 };
-
-
-
-

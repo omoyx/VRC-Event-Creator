@@ -2,6 +2,17 @@
 
 All notable changes to VRChat Event Creator will be documented in this file.
 
+## [0.9.25] - 2026-01-09
+
+### Fixed
+- Comprehensive translation audit and cleanup across all 9 language files
+- Added missing `common.months` sections to Spanish, French, Russian, Japanese, Korean, Portuguese, and Chinese
+- Removed orphaned field duplicate keys from Japanese, Korean, Portuguese, Russian, and Chinese files
+- Removed extra translation keys not present in English reference file (editButton, deleteButton, save, delete)
+- Fixed duplicate `profiles.patterns.format` object in German translation
+- Standardized indentation to 2 spaces in languageSetup and gallery sections across all files
+- All translation files now match English structure for consistency
+
 ## [0.9.24] - 2026-01-09
 Feature Complete Release!
 

@@ -36,9 +36,11 @@ let debugLogFirstEntry = true;
 function writeDebugLog(entry) {
   if (!IS_DEV || !DEBUG_LOG_PATH) return;
   try {
+    // Sanitize entry to prevent potential issues
+    const sanitized = typeof entry === 'object' && entry !== null ? entry : { data: String(entry) };
     const prefix = debugLogFirstEntry ? "" : ",\n";
     debugLogFirstEntry = false;
-    fs.appendFileSync(DEBUG_LOG_PATH, prefix + JSON.stringify(entry, null, 2), "utf8");
+    fs.appendFileSync(DEBUG_LOG_PATH, prefix + JSON.stringify(sanitized, null, 2), "utf8");
   } catch (e) {
     // Ignore write errors
   }
@@ -326,6 +328,14 @@ async function downloadGalleryImage(imageId, remoteUrl, mimeType) {
     const ext = mimeType === "image/png" ? ".png" : ".jpg";
     const localFileName = `${imageId}${ext}`;
     const localPath = path.join(GALLERY_CACHE_DIR, localFileName);
+
+    // Validate that the resolved path is within the cache directory (prevent path traversal)
+    const normalizedPath = path.normalize(localPath);
+    const normalizedCacheDir = path.normalize(GALLERY_CACHE_DIR);
+    if (!normalizedPath.startsWith(normalizedCacheDir)) {
+      debugLog("galleryCache", `Invalid path detected for ${imageId}`);
+      return null;
+    }
 
     const response = await fetch(remoteUrl);
     if (!response.ok) {

@@ -210,8 +210,6 @@ export const ko = {
       loadFailed: "패턴 날짜를 불러올 수 없습니다."
     },
     profileHint: "프로필은 선택 사항입니다. 기본값을 위해 사용하거나 수동으로 모두 생성하세요.",
-    selectGroup: "그룹 선택",
-    selectGroupPlaceholder: "그룹 선택",
     loadProfile: "프로필 불러오기 (선택)",
     loadProfilePlaceholder: "프로필 선택",
     clearProfile: "프로필 지우기",
@@ -220,16 +218,7 @@ export const ko = {
     dateSourcePattern: "프로필 패턴에서",
     dateOption: "날짜 선택",
     patternDateLabel: "{label} - {date}",
-    manualDate: "날짜",
-    manualTime: "시간",
-    timezone: "시간대",
-    duration: "지속 시간 (DD:HH:MM)",
-    eventName: "이벤트 이름",
-    description: "설명",
-    category: "카테고리",
-    tags: "태그 (최대 5)",
     access: "접근",
-    accessType: "접근 유형",
     roleRestrictions: {
       title: "역할 제한",
       hint: "선택 사항 - 활성화하면 선택한 그룹 역할만 참여할 수 있습니다.",
@@ -239,13 +228,6 @@ export const ko = {
       roles: "역할",
       noRoles: "이 그룹에 사용 가능한 역할이 없습니다."
     },
-    imageId: "이미지 ID (선택)",
-    imageIdPlaceholder: "예: file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "알림 보내기",
-    languages: "언어 (최대 3개)",
-    languagesHint: "{count}개 선택됨",
-    filterLanguages: "언어 필터...",
-    platforms: "플랫폼",
     manualProfileOption: "수동 (프로필 없음)",
     pastDateError: "과거 날짜는 선택할 수 없습니다.",
     futureDateError: "이벤트는 최대 1년까지만 예약할 수 있습니다.",
@@ -277,8 +259,7 @@ export const ko = {
     title: "이벤트 수정",
     subtitle: "그룹의 예정된 이벤트를 수정하거나 삭제합니다.",
     groupLabel: "그룹",
-    selectGroupPlaceholder: "그룹 선택",
-    refresh: "새로 고침",
+    showPending: "보류 중 표시",
     countEmpty: "예정된 이벤트를 불러올 수 없습니다.",
     countGroupFallback: "이 그룹",
     countStatus: "{group}의 예정된 이벤트: {count}.",
@@ -287,29 +268,14 @@ export const ko = {
     eventImage: "이벤트 이미지",
     noImage: "이미지 없음",
     untitled: "제목 없는 이벤트",
-    delete: "이벤트 삭제",
     profileLabel: "프로필 불러오기(선택)",
     profileSelect: "프로필 선택",
     profileLoad: "불러오기",
     profileSelectError: "불러올 프로필을 선택하세요.",
     profileLoadFailed: "프로필 기본값을 불러올 수 없습니다.",
     profileLoaded: "프로필 기본값을 불러왔습니다.",
-    eventName: "이벤트 이름",
-    description: "설명",
-    category: "카테고리",
-    tags: "태그 (최대 5)",
-    accessType: "접근 유형",
-    imageId: "이미지 ID(선택)",
-    imageIdPlaceholder: "예: file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "알림 보내기",
     manualDate: "날짜 변경",
     manualTime: "시간 변경",
-    timezone: "시간대",
-    duration: "지속 시간 (DD:HH:MM)",
-    languages: "언어(최대 3)",
-    languagesHint: "{count}개 선택됨",
-    filterLanguages: "언어 필터...",
-    platforms: "플랫폼",
     modal: {
       title: "이벤트 수정",
       subtitle: "변경 사항은 저장을 눌렀을 때만 적용됩니다."
@@ -367,39 +333,20 @@ export const ko = {
       groupAccess: "캘린더 접근 권한이 있는 그룹을 선택하세요.",
       patternsInfo: "패턴은 예정 날짜를 미리 생성하는 데 사용됩니다."
     },
-    selectGroup: "그룹 선택",
-    selectGroupPlaceholder: "그룹 선택",
     existingProfile: "기존 프로필",
     existingProfilePlaceholder: "프로필 선택",
     noProfiles: "이 그룹에 프로필이 없습니다",
     newButton: "새 프로필",
-    editButton: "편집",
-    deleteButton: "삭제",
     saveButton: "프로필 저장",
-    save: "저장",
     displayName: "프로필 이름",
     displayNamePlaceholder: "커뮤니티 모임 템플릿",
-    eventName: "이벤트 이름",
-    description: "설명",
-    category: "카테고리",
-    tags: "태그 (최대 5)",
     access: "접근",
-    accessType: "접근 유형",
-    imageId: "이미지 ID (선택)",
-    imageIdPlaceholder: "예: file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    duration: "지속 시간 (DD:HH:MM)",
     durationDefault: "기본 지속 시간 (DD:HH:MM)",
-    timezone: "시간대",
     dateMode: "날짜 모드",
     dateModePattern: "패턴 기반",
     dateModeManual: "수동만",
     dateModeBoth: "패턴 + 수동",
-    sendNotification: "알림 보내기",
     sendNotificationDefault: "기본적으로 알림 보내기",
-    languages: "언어 (최대 3개)",
-    languagesHint: "{count}개 선택됨",
-    filterLanguages: "언어 필터...",
-    platforms: "플랫폼",
     patterns: {
       title: "반복 패턴",
       addButton: "패턴 추가",
@@ -420,21 +367,22 @@ export const ko = {
         nth2: "매월 2번째 [weekday]",
         nth3: "매월 3번째 [weekday]",
         nth4: "매월 4번째 [weekday]",
-        last: "매월 마지막 [weekday]"
+        last: "매월 마지막 [weekday]",
+        annual: "매년 [날짜]"
       },
       format: {
         every: "매주 {weekday} {time}",
         everyOther: "격주 {weekday} {time}",
         last: "마지막 {weekday} {time}",
-        nth: "{ordinal} {weekday} {time}"
+        nth: "{ordinal} {weekday} {time}",
+        annual: "매년 {month} {day} {time}"
       },
       ordinal1: "첫째",
       ordinal2: "둘째",
       ordinal3: "셋째",
       ordinal4: "넷째",
       date: "날짜",
-      selectMonth: "월 선택",
-      annual: "매년 [날짜]"
+      selectMonth: "월 선택"
     },
     automation: {
       title: "자동화 (실험적)",
@@ -453,8 +401,8 @@ export const ko = {
       minutes: "분",
       monthlyHint: "매월 이 날짜에 이벤트 게시:",
       monthlyDay: "일",
-      monthlyHour: "시",
-      monthlyMinute: "분",
+      monthlyDayHint: "29~31일은 더 짧은 달의 마지막 날을 사용합니다",
+      monthlyTime: "시간",
       repeatMode: "반복",
       repeatModes: {
         indefinite: "무기한",
@@ -543,6 +491,20 @@ export const ko = {
       saturday: "토요일",
       sunday: "일요일"
     },
+    months: {
+      january: "1월",
+      february: "2월",
+      march: "3월",
+      april: "4월",
+      may: "5월",
+      june: "6월",
+      july: "7월",
+      august: "8월",
+      september: "9월",
+      october: "10월",
+      november: "11월",
+      december: "12월"
+    },
     fields: {
       eventName: "이벤트 이름",
       description: "설명",
@@ -573,7 +535,3 @@ export const ko = {
     continue: "그대로 생성"
   }
 };
-
-
-
-

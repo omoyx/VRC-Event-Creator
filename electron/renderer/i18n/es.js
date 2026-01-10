@@ -30,14 +30,13 @@ export const es = {
     codeLabel: "Código",
     submit: "Enviar"
   },
-    languageSetup: {
+  languageSetup: {
     title: "Elegir idioma",
     subtitle: "Selecciona tu idioma para comenzar.",
     hint: "Puedes cambiar esto en cualquier momento en Configuración.",
     continue: "Continuar"
   },
-
-    gallery: {
+  gallery: {
     title: "Galería",
     subtitle: "Selecciona una imagen de la galería para usar su ID de archivo.",
     empty: "No se encontraron imágenes de la galería.",
@@ -55,8 +54,6 @@ export const es = {
     loadMore: "Cargar más",
     loadFailed: "No se pudo cargar la galería."
   },
-
-
   settings: {
     title: "Configuración",
     theme: {
@@ -370,21 +367,22 @@ export const es = {
         nth2: "Cada 2.º [día] del mes",
         nth3: "Cada 3.º [día] del mes",
         nth4: "Cada 4.º [día] del mes",
-        last: "Cada último [día] del mes"
+        last: "Cada último [día] del mes",
+        annual: "Cada año el [fecha]"
       },
       format: {
         every: "Cada {weekday} a las {time}",
         everyOther: "Cada dos {weekday} a las {time}",
         last: "Último {weekday} a las {time}",
-        nth: "El {ordinal} {weekday} a las {time}"
+        nth: "El {ordinal} {weekday} a las {time}",
+        annual: "Cada año el {month} {day} a las {time}"
       },
       ordinal1: "1.º",
       ordinal2: "2.º",
       ordinal3: "3.º",
       ordinal4: "4.º",
       date: "Fecha",
-      selectMonth: "Seleccionar mes",
-      annual: "Cada año el [fecha]"
+      selectMonth: "Seleccionar mes"
     },
     automation: {
       title: "Automatización (Experimental)",
@@ -403,8 +401,8 @@ export const es = {
       minutes: "Minutos",
       monthlyHint: "Publicar eventos en este día cada mes:",
       monthlyDay: "Día del mes",
-      monthlyHour: "Hora",
-      monthlyMinute: "Minuto",
+      monthlyDayHint: "Los días 29-31 usarán el último día de meses más cortos",
+      monthlyTime: "Hora",
       repeatMode: "Repetir",
       repeatModes: {
         indefinite: "Indefinidamente",
@@ -493,6 +491,20 @@ export const es = {
       saturday: "Sábado",
       sunday: "Domingo"
     },
+    months: {
+      january: "Enero",
+      february: "Febrero",
+      march: "Marzo",
+      april: "Abril",
+      may: "Mayo",
+      june: "Junio",
+      july: "Julio",
+      august: "Agosto",
+      september: "Septiembre",
+      october: "Octubre",
+      november: "Noviembre",
+      december: "Diciembre"
+    },
     fields: {
       eventName: "Nombre del evento",
       description: "Descripción",
@@ -523,7 +535,3 @@ export const es = {
     continue: "Crear de todas formas"
   }
 };
-
-
-
-

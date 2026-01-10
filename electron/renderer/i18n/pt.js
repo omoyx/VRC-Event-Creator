@@ -210,8 +210,6 @@ export const pt = {
       loadFailed: "Não foi possível carregar datas do padrão."
     },
     profileHint: "Perfis são opcionais. Use um para padrões ou crie tudo manualmente.",
-    selectGroup: "Selecionar grupo",
-    selectGroupPlaceholder: "Escolha um grupo",
     loadProfile: "Carregar perfil (opcional)",
     loadProfilePlaceholder: "Selecione um perfil",
     clearProfile: "Limpar perfil",
@@ -220,16 +218,7 @@ export const pt = {
     dateSourcePattern: "Do padrão do perfil",
     dateOption: "Selecionar data",
     patternDateLabel: "{label} - {date}",
-    manualDate: "Data",
-    manualTime: "Hora",
-    timezone: "Fuso horário",
-    duration: "Duração (DD:HH:MM)",
-    eventName: "Nome do evento",
-    description: "Descrição",
-    category: "Categoria",
-    tags: "Tags (máx. 5)",
     access: "Acesso",
-    accessType: "Tipo de acesso",
     roleRestrictions: {
       title: "Restrições de cargos",
       hint: "Opcional - Se ativado, apenas os cargos de grupo selecionados podem participar.",
@@ -239,13 +228,6 @@ export const pt = {
       roles: "Cargos",
       noRoles: "Nenhum cargo disponível para este grupo."
     },
-    imageId: "ID da imagem (opcional)",
-    imageIdPlaceholder: "ex. file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "Enviar notificação",
-    languages: "Idiomas (máx. 3)",
-    languagesHint: "{count} selecionado(s)",
-    filterLanguages: "Filtrar idiomas...",
-    platforms: "Plataformas",
     manualProfileOption: "Manual (sem perfil)",
     pastDateError: "Não é possível selecionar uma data passada.",
     futureDateError: "Os eventos só podem ser agendados com até 1 ano de antecedência.",
@@ -277,8 +259,7 @@ export const pt = {
     title: "Modificar eventos",
     subtitle: "Editar ou excluir eventos futuros do grupo.",
     groupLabel: "Grupo",
-    selectGroupPlaceholder: "Escolha um grupo",
-    refresh: "Atualizar",
+    showPending: "Mostrar pendentes",
     countEmpty: "Eventos futuros indisponíveis.",
     countGroupFallback: "Este grupo",
     countStatus: "Eventos futuros para {group}: {count}.",
@@ -287,29 +268,14 @@ export const pt = {
     eventImage: "Imagem do evento",
     noImage: "Sem imagem",
     untitled: "Evento sem título",
-    delete: "Excluir evento",
     profileLabel: "Carregar perfil (opcional)",
     profileSelect: "Selecionar um perfil",
     profileLoad: "Carregar",
     profileSelectError: "Selecione um perfil para carregar.",
     profileLoadFailed: "Não foi possível carregar os padrões do perfil.",
     profileLoaded: "Padrões do perfil carregados.",
-    eventName: "Nome do evento",
-    description: "Descrição",
-    category: "Categoria",
-    tags: "Tags (máx. 5)",
-    accessType: "Tipo de acesso",
-    imageId: "ID da imagem (opcional)",
-    imageIdPlaceholder: "ex.: file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "Enviar notificação",
     manualDate: "Alterar data",
     manualTime: "Alterar hora",
-    timezone: "Fuso horário",
-    duration: "Duração (DD:HH:MM)",
-    languages: "Idiomas (máx. 3)",
-    languagesHint: "{count} selecionado(s)",
-    filterLanguages: "Filtrar idiomas...",
-    platforms: "Plataformas",
     modal: {
       title: "Editar evento",
       subtitle: "As alterações só são aplicadas quando você pressiona Salvar."
@@ -367,39 +333,20 @@ export const pt = {
       groupAccess: "Escolha um grupo com acesso ao calendário.",
       patternsInfo: "Padrões são usados para pré-gerar datas futuras."
     },
-    selectGroup: "Selecionar grupo",
-    selectGroupPlaceholder: "Escolha um grupo",
     existingProfile: "Perfil existente",
     existingProfilePlaceholder: "Selecione um perfil",
     noProfiles: "Sem perfis para este grupo",
     newButton: "Novo perfil",
-    editButton: "Editar",
-    deleteButton: "Excluir",
     saveButton: "Salvar perfil",
-    save: "Salvar",
     displayName: "Nome do perfil",
     displayNamePlaceholder: "Modelo de encontro da comunidade",
-    eventName: "Nome do evento",
-    description: "Descrição",
-    category: "Categoria",
-    tags: "Tags (máx. 5)",
     access: "Acesso",
-    accessType: "Tipo de acesso",
-    imageId: "ID da imagem (opcional)",
-    imageIdPlaceholder: "ex. file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    duration: "Duração (DD:HH:MM)",
     durationDefault: "Duração padrão (DD:HH:MM)",
-    timezone: "Fuso horário",
     dateMode: "Modo de data",
     dateModePattern: "Baseado em padrão",
     dateModeManual: "Somente manual",
     dateModeBoth: "Padrões + manual",
-    sendNotification: "Enviar notificação",
     sendNotificationDefault: "Enviar notificação por padrão",
-    languages: "Idiomas (máx. 3)",
-    languagesHint: "{count} selecionado(s)",
-    filterLanguages: "Filtrar idiomas...",
-    platforms: "Plataformas",
     patterns: {
       title: "Padrões recorrentes",
       addButton: "Adicionar padrão",
@@ -420,21 +367,22 @@ export const pt = {
         nth2: "Todo 2º [weekday] do mês",
         nth3: "Todo 3º [weekday] do mês",
         nth4: "Todo 4º [weekday] do mês",
-        last: "Todo último [weekday] do mês"
+        last: "Todo último [weekday] do mês",
+        annual: "Todo ano em [data]"
       },
       format: {
         every: "Toda {weekday} às {time}",
         everyOther: "A cada duas semanas {weekday} às {time}",
         last: "Última {weekday} às {time}",
-        nth: "{ordinal} {weekday} às {time}"
+        nth: "{ordinal} {weekday} às {time}",
+        annual: "Todo ano em {month} {day} às {time}"
       },
       ordinal1: "1º",
       ordinal2: "2º",
       ordinal3: "3º",
       ordinal4: "4º",
       date: "Data",
-      selectMonth: "Selecionar mês",
-      annual: "Todo ano em [data]"
+      selectMonth: "Selecionar mês"
     },
     automation: {
       title: "Automação (Experimental)",
@@ -453,8 +401,8 @@ export const pt = {
       minutes: "Minutos",
       monthlyHint: "Publicar eventos neste dia todo mês:",
       monthlyDay: "Dia do mês",
-      monthlyHour: "Hora",
-      monthlyMinute: "Minuto",
+      monthlyDayHint: "Dias 29-31 usarão o último dia de meses mais curtos",
+      monthlyTime: "Hora",
       repeatMode: "Repetir",
       repeatModes: {
         indefinite: "Indefinidamente",
@@ -543,6 +491,20 @@ export const pt = {
       saturday: "Sábado",
       sunday: "Domingo"
     },
+    months: {
+      january: "Janeiro",
+      february: "Fevereiro",
+      march: "Março",
+      april: "Abril",
+      may: "Maio",
+      june: "Junho",
+      july: "Julho",
+      august: "Agosto",
+      september: "Setembro",
+      october: "Outubro",
+      november: "Novembro",
+      december: "Dezembro"
+    },
     fields: {
       eventName: "Nome do evento",
       description: "Descrição",
@@ -573,7 +535,3 @@ export const pt = {
     continue: "Criar mesmo assim"
   }
 };
-
-
-
-

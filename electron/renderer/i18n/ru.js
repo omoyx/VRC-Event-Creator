@@ -210,8 +210,6 @@ export const ru = {
       loadFailed: "Не удалось загрузить даты шаблона."
     },
     profileHint: "Профили необязательны. Используйте для значений по умолчанию или создавайте вручную.",
-    selectGroup: "Выбрать группу",
-    selectGroupPlaceholder: "Выберите группу",
     loadProfile: "Загрузить профиль (необязательно)",
     loadProfilePlaceholder: "Выберите профиль",
     clearProfile: "Очистить профиль",
@@ -220,16 +218,7 @@ export const ru = {
     dateSourcePattern: "По шаблону профиля",
     dateOption: "Выберите дату",
     patternDateLabel: "{label} - {date}",
-    manualDate: "Дата",
-    manualTime: "Время",
-    timezone: "Часовой пояс",
-    duration: "Длительность (DD:HH:MM)",
-    eventName: "Название события",
-    description: "Описание",
-    category: "Категория",
-    tags: "Теги (макс. 5)",
     access: "Доступ",
-    accessType: "Тип доступа",
     roleRestrictions: {
       title: "Ограничения ролей",
       hint: "Необязательно - если включено, присоединяться могут только выбранные роли группы.",
@@ -239,13 +228,6 @@ export const ru = {
       roles: "Роли",
       noRoles: "Для этой группы нет доступных ролей."
     },
-    imageId: "ID изображения (необязательно)",
-    imageIdPlaceholder: "например, file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "Отправить уведомление",
-    languages: "Языки (макс. 3)",
-    languagesHint: "{count} выбрано",
-    filterLanguages: "Фильтр языков...",
-    platforms: "Платформы",
     manualProfileOption: "Вручную (без профиля)",
     pastDateError: "Нельзя выбрать прошедшую дату.",
     futureDateError: "События можно планировать только на 1 год вперед.",
@@ -277,8 +259,7 @@ export const ru = {
     title: "Редактировать события",
     subtitle: "Редактируйте или удаляйте предстоящие события группы.",
     groupLabel: "Группа",
-    selectGroupPlaceholder: "Выберите группу",
-    refresh: "Обновить",
+    showPending: "Показать ожидающие",
     countEmpty: "Предстоящие события недоступны.",
     countGroupFallback: "Эта группа",
     countStatus: "Предстоящие события для {group}: {count}.",
@@ -287,29 +268,14 @@ export const ru = {
     eventImage: "Изображение события",
     noImage: "Без изображения",
     untitled: "Событие без названия",
-    delete: "Удалить событие",
     profileLabel: "Загрузить профиль (необязательно)",
     profileSelect: "Выберите профиль",
     profileLoad: "Загрузить",
     profileSelectError: "Выберите профиль для загрузки.",
     profileLoadFailed: "Не удалось загрузить значения профиля.",
     profileLoaded: "Значения профиля загружены.",
-    eventName: "Название события",
-    description: "Описание",
-    category: "Категория",
-    tags: "Теги (макс. 5)",
-    accessType: "Тип доступа",
-    imageId: "ID изображения (необязательно)",
-    imageIdPlaceholder: "напр. file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "Отправить уведомление",
     manualDate: "Изменить дату",
     manualTime: "Изменить время",
-    timezone: "Часовой пояс",
-    duration: "Длительность (DD:HH:MM)",
-    languages: "Языки (макс. 3)",
-    languagesHint: "{count} выбрано",
-    filterLanguages: "Фильтр языков...",
-    platforms: "Платформы",
     modal: {
       title: "Редактировать событие",
       subtitle: "Изменения применяются только после нажатия «Сохранить»."
@@ -367,39 +333,20 @@ export const ru = {
       groupAccess: "Выберите группу с доступом к календарю.",
       patternsInfo: "Шаблоны используются для предварительного создания дат."
     },
-    selectGroup: "Выбрать группу",
-    selectGroupPlaceholder: "Выберите группу",
     existingProfile: "Существующий профиль",
     existingProfilePlaceholder: "Выберите профиль",
     noProfiles: "В этой группе нет профилей",
     newButton: "Новый профиль",
-    editButton: "Изменить",
-    deleteButton: "Удалить",
     saveButton: "Сохранить профиль",
-    save: "Сохранить",
     displayName: "Название профиля",
     displayNamePlaceholder: "Шаблон встречи сообщества",
-    eventName: "Название события",
-    description: "Описание",
-    category: "Категория",
-    tags: "Теги (макс. 5)",
     access: "Доступ",
-    accessType: "Тип доступа",
-    imageId: "ID изображения (необязательно)",
-    imageIdPlaceholder: "например, file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    duration: "Длительность (DD:HH:MM)",
     durationDefault: "Длительность по умолчанию (DD:HH:MM)",
-    timezone: "Часовой пояс",
     dateMode: "Режим даты",
     dateModePattern: "По шаблону",
     dateModeManual: "Только вручную",
     dateModeBoth: "Шаблоны + вручную",
-    sendNotification: "Отправлять уведомление",
     sendNotificationDefault: "Отправлять уведомление по умолчанию",
-    languages: "Языки (макс. 3)",
-    languagesHint: "{count} выбрано",
-    filterLanguages: "Фильтр языков...",
-    platforms: "Платформы",
     patterns: {
       title: "Повторяющиеся шаблоны",
       addButton: "Добавить шаблон",
@@ -420,21 +367,22 @@ export const ru = {
         nth2: "Каждый 2-й [weekday] месяца",
         nth3: "Каждый 3-й [weekday] месяца",
         nth4: "Каждый 4-й [weekday] месяца",
-        last: "Каждый последний [weekday] месяца"
+        last: "Каждый последний [weekday] месяца",
+        annual: "Каждый год [дата]"
       },
       format: {
         every: "Каждый {weekday} в {time}",
         everyOther: "Через неделю {weekday} в {time}",
         last: "Последний {weekday} в {time}",
-        nth: "{ordinal} {weekday} в {time}"
+        nth: "{ordinal} {weekday} в {time}",
+        annual: "Каждый год {month} {day} в {time}"
       },
       ordinal1: "1-й",
       ordinal2: "2-й",
       ordinal3: "3-й",
       ordinal4: "4-й",
       date: "Дата",
-      selectMonth: "Выбрать месяц",
-      annual: "Каждый год [дата]"
+      selectMonth: "Выбрать месяц"
     },
     automation: {
       title: "Автоматизация (Экспериментально)",
@@ -453,8 +401,8 @@ export const ru = {
       minutes: "Минуты",
       monthlyHint: "Публиковать события в этот день каждого месяца:",
       monthlyDay: "День месяца",
-      monthlyHour: "Час",
-      monthlyMinute: "Минута",
+      monthlyDayHint: "Дни 29-31 будут использовать последний день более коротких месяцев",
+      monthlyTime: "Время",
       repeatMode: "Повторять",
       repeatModes: {
         indefinite: "Бесконечно",
@@ -543,6 +491,20 @@ export const ru = {
       saturday: "Суббота",
       sunday: "Воскресенье"
     },
+    months: {
+      january: "Январь",
+      february: "Февраль",
+      march: "Март",
+      april: "Апрель",
+      may: "Май",
+      june: "Июнь",
+      july: "Июль",
+      august: "Август",
+      september: "Сентябрь",
+      october: "Октябрь",
+      november: "Ноябрь",
+      december: "Декабрь"
+    },
     fields: {
       eventName: "Название события",
       description: "Описание",
@@ -573,7 +535,3 @@ export const ru = {
     continue: "Создать в любом случае"
   }
 };
-
-
-
-

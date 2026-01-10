@@ -29,10 +29,12 @@ Créez et enregistrez des modèles d'événements par groupe, générez des date
 ## Fonctionnalités
 - Profils/modèles qui préremplissent les détails des événements par groupe.
 - Générateur de récurrences avec liste des prochaines dates et option manuelle date/heure.
+- Système d'automatisation d'événements (expérimental) - publie automatiquement des événements selon les motifs du profil.
 - Assistant de création d'événements pour les calendriers de groupe.
 - Vue Modifier les événements pour les événements à venir (grille + fenêtre d'édition).
 - Studio de thèmes avec préréglages et contrôle complet des couleurs UI (prend en charge #RRGGBBAA).
 - Sélecteur et téléversement d'images de galerie pour les ID d'image.
+- Réduction dans la barre d'état système.
 - Localisation avec sélection de langue au premier lancement (en, fr, es, de, ja, zh, pt, ko, ru).
 
 ## Téléchargement
@@ -46,6 +48,8 @@ L'application stocke ses fichiers dans le répertoire de données utilisateur d'
 - `cache.json` (jetons de session)
 - `settings.json` (paramètres de l'application)
 - `themes.json` (préréglages de thèmes et couleurs personnalisées)
+- `pending-events.json` (file d'attente d'automatisation)
+- `automation-state.json` (suivi de l'automatisation)
 
 Vous pouvez remplacer le répertoire de données avec la variable d'environnement `VRC_EVENT_DATA_DIR`.
 Au premier lancement, l'application tentera d'importer un `profiles.json` existant depuis le dossier du projet.
@@ -58,7 +62,8 @@ __**Ne partagez pas les fichiers de cache ni les dossiers de données de l'appli
 - La durée utilise DD:HH:MM et est limitée à 31 jours.
 - Les tags sont limités à 5 et les langues à 3.
 - Les téléversements de galerie sont limités à PNG/JPG, 64-2048 px, moins de 10 Mo et 64 images par compte.
-- VRChat n'autorise actuellement que 10 événements à venir à la fois.
+- VRChat limite la création d'événements à 10 événements par heure par personne par groupe.
+- L'automatisation d'événements nécessite que l'application soit en cours d'exécution. Les automatisations manquées peuvent être gérées dans Modifier les événements.
 
 ## Dépannage
 - Problèmes de connexion : supprimez `cache.json` et reconnectez-vous (utilisez le dossier de données indiqué dans Paramètres > Informations sur l'application).

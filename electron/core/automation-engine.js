@@ -4,7 +4,6 @@
  */
 
 const fs = require("fs");
-const path = require("path");
 const { generateDateOptionsFromPatterns } = require("./date-utils");
 
 // In-memory job storage
@@ -390,7 +389,7 @@ function cancelJob(pendingEventId) {
  * Cancel all scheduled jobs
  */
 function cancelAllJobs() {
-  for (const [id, timeoutId] of scheduledJobs) {
+  for (const timeoutId of scheduledJobs.values()) {
     clearTimeout(timeoutId);
   }
   scheduledJobs.clear();

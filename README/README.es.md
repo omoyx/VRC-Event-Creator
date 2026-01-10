@@ -29,10 +29,12 @@ Crea y guarda plantillas de eventos por grupo, genera fechas próximas a partir 
 ## Funcionalidades
 - Perfiles/plantillas que rellenan automáticamente los detalles del evento por grupo.
 - Generador de patrones recurrentes con lista de próximas fechas y opción manual de fecha/hora.
+- Sistema de automatización de eventos (experimental) - publica automáticamente eventos según los patrones del perfil.
 - Asistente de creación de eventos para calendarios de grupo.
 - Vista de modificar eventos para próximos eventos (rejilla + modal de edición).
 - Estudio de temas con presets y control total de colores de la UI (compatible con #RRGGBBAA).
 - Selector y subida de imágenes de galería para IDs de imagen.
+- Minimizar a la bandeja del sistema.
 - Localización con selección de idioma en el primer inicio (en, fr, es, de, ja, zh, pt, ko, ru).
 
 ## Descarga
@@ -46,6 +48,8 @@ La aplicación almacena sus archivos en el directorio de datos de usuario de Ele
 - `cache.json` (tokens de sesión)
 - `settings.json` (configuración de la aplicación)
 - `themes.json` (presets de temas y colores personalizados)
+- `pending-events.json` (cola de automatización)
+- `automation-state.json` (seguimiento de automatización)
 
 Puedes sobrescribir el directorio de datos con la variable de entorno `VRC_EVENT_DATA_DIR`.
 En el primer inicio, la aplicación intentará importar un `profiles.json` existente desde la carpeta del proyecto.
@@ -58,7 +62,8 @@ __**No compartas archivos de caché ni carpetas de datos de la aplicación.**__
 - La duración usa DD:HH:MM y tiene un máximo de 31 días.
 - Las etiquetas están limitadas a 5 y los idiomas a 3.
 - Las subidas a la galería se limitan a PNG/JPG, 64-2048 px, menos de 10 MB y 64 imágenes por cuenta.
-- Actualmente VRChat solo permite hasta 10 eventos próximos a la vez.
+- VRChat limita la creación de eventos a 10 eventos por hora por persona por grupo.
+- La automatización de eventos requiere que la aplicación esté en ejecución. Las automatizaciones perdidas se pueden gestionar en Modificar eventos.
 
 ## Solución de problemas
 - Problemas de inicio de sesión: elimina `cache.json` y vuelve a iniciar sesión (usa la carpeta de datos indicada en Configuración > Información de la aplicación).

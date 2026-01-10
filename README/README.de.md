@@ -29,10 +29,12 @@ Erstelle und speichere gruppenbezogene Event-Vorlagen, generiere kommende Termin
 ## Funktionen
 - Profile/Vorlagen, die Event-Details pro Gruppe automatisch ausfüllen.
 - Generator für wiederkehrende Muster mit Listen kommender Termine und manuellem Datum/Uhrzeit-Fallback.
+- Event-Automatisierungssystem (experimentell) - veröffentlicht automatisch Events basierend auf Profilmustern.
 - Assistent zur Event-Erstellung für Gruppenkalender.
-- Ansicht „Events bearbeiten“ für kommende Events (Raster + Bearbeitungs-Modal).
+- Ansicht „Events bearbeiten" für kommende Events (Raster + Bearbeitungs-Modal).
 - Theme Studio mit Presets und voller UI-Farbkontrolle (unterstützt #RRGGBBAA).
 - Galerieauswahl und Upload für Bild-IDs.
+- Minimierung in die Taskleiste.
 - Lokalisierung mit Sprachauswahl beim ersten Start (en, fr, es, de, ja, zh, pt, ko, ru).
 
 ## Download
@@ -46,6 +48,8 @@ Die App speichert ihre Dateien im Electron-Benutzerdatenverzeichnis (angezeigt u
 - `cache.json` (Session-Tokens)
 - `settings.json` (App-Einstellungen)
 - `themes.json` (Theme-Presets und benutzerdefinierte Farben)
+- `pending-events.json` (Automatisierungswarteschlange)
+- `automation-state.json` (Automatisierungsverfolgung)
 
 Du kannst das Datenverzeichnis mit der Umgebungsvariable `VRC_EVENT_DATA_DIR` überschreiben.
 Beim ersten Start versucht die App, eine vorhandene `profiles.json` aus dem Projektordner zu importieren.
@@ -58,7 +62,8 @@ __**Teile keine Cache-Dateien oder App-Datenordner.**__
 - Dauer verwendet DD:HH:MM und ist auf 31 Tage begrenzt.
 - Tags sind auf 5 und Sprachen auf 3 begrenzt.
 - Galerie-Uploads sind auf PNG/JPG, 64-2048 px, unter 10 MB und 64 Bilder pro Konto begrenzt.
-- VRChat erlaubt derzeit nur bis zu 10 kommende Events gleichzeitig.
+- VRChat begrenzt die Event-Erstellung auf 10 Events pro Stunde pro Person pro Gruppe.
+- Event-Automatisierung erfordert, dass die App läuft. Verpasste Automatisierungen können unter Events bearbeiten verwaltet werden.
 
 ## Fehlerbehebung
 - Login-Probleme: `cache.json` löschen und erneut anmelden (verwende den Datenordner aus Einstellungen > Anwendungsinfo).

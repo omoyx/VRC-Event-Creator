@@ -2,7 +2,7 @@
 import { EVENT_DESCRIPTION_LIMIT, EVENT_NAME_LIMIT, TAG_LIMIT } from "./config.js";
 import { dom, state, setProfileEditConfirmed, getProfileEditConfirmed, getProfileWizard } from "./state.js";
 import { t } from "./i18n/index.js";
-import { enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, formatDurationPreview, enforceGroupAccess, sanitizeDurationInputValue } from "./utils.js";
+import { enforceTagsInput, sanitizeText, formatDuration, normalizeDurationInput, parseDurationInput, formatDurationPreview, enforceGroupAccess } from "./utils.js";
 import { fetchGroupRoles, renderRoleList } from "./roles.js";
 
 let roleFetchToken = 0;
@@ -240,16 +240,12 @@ function getMinPatternFrequencyDays(patterns) {
   if (!patterns?.length) return Infinity;
 
   let minDays = Infinity;
-  let hasEvery = false;
-  let hasEveryOther = false;
   let nthCount = 0;
 
   for (const p of patterns) {
     if (p.type === "every") {
-      hasEvery = true;
       minDays = Math.min(minDays, 7);
     } else if (p.type === "every-other") {
-      hasEveryOther = true;
       minDays = Math.min(minDays, 14);
     } else if (p.type === "nth" || p.type === "last") {
       nthCount++;

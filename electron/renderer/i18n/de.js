@@ -30,14 +30,13 @@ export const de = {
     codeLabel: "Bestätigungscode",
     submit: "Senden"
   },
-    languageSetup: {
+  languageSetup: {
     title: "Sprache wählen",
     subtitle: "Wähle deine Sprache, um zu starten.",
     hint: "Du kannst das jederzeit in den Einstellungen ändern.",
     continue: "Weiter"
   },
-
-    gallery: {
+  gallery: {
     title: "Galerie",
     subtitle: "Wähle ein Galerie-Bild aus, um dessen Datei-ID zu verwenden.",
     empty: "Keine Galerie-Bilder gefunden.",
@@ -370,26 +369,22 @@ export const de = {
         nth2: "Jeden 2. [Wochentag] im Monat",
         nth3: "Jeden 3. [Wochentag] im Monat",
         nth4: "Jeden 4. [Wochentag] im Monat",
-        last: "Jeden letzten [Wochentag] im Monat"
+        last: "Jeden letzten [Wochentag] im Monat",
+        annual: "Jedes Jahr am [Datum]"
       },
       format: {
         every: "Jeden {weekday} um {time}",
         everyOther: "Jeden zweiten {weekday} um {time}",
         last: "Letzten {weekday} um {time}",
-        nth: "Am {ordinal} {weekday} um {time}"
+        nth: "Am {ordinal} {weekday} um {time}",
+        annual: "Jedes Jahr am {month} {day} um {time}"
       },
       ordinal1: "1.",
       ordinal2: "2.",
       ordinal3: "3.",
       ordinal4: "4.",
       date: "Datum",
-      selectMonth: "Monat auswählen",
-      types: {
-        annual: "Jedes Jahr am [Datum]"
-      },
-      format: {
-        annual: "Jedes Jahr am {month} {day} um {time}"
-      }
+      selectMonth: "Monat auswählen"
     },
     automation: {
       title: "Automatisierung (Experimentell)",
@@ -408,6 +403,7 @@ export const de = {
       minutes: "Minuten",
       monthlyHint: "Ereignisse an diesem Tag jeden Monat veröffentlichen:",
       monthlyDay: "Tag des Monats",
+      monthlyDayHint: "Tage 29-31 nutzen den letzten Tag kürzerer Monate",
       monthlyTime: "Uhrzeit",
       repeatMode: "Wiederholen",
       repeatModes: {
@@ -541,7 +537,3 @@ export const de = {
     continue: "Trotzdem erstellen"
   }
 };
-
-
-
-

@@ -36,7 +36,6 @@ export const ja = {
     hint: "設定でいつでも変更できます。",
     continue: "続行"
   },
-
     gallery: {
     title: "ギャラリー",
     subtitle: "ギャラリー画像を選択してファイルIDを使用します。",
@@ -55,8 +54,6 @@ export const ja = {
     loadMore: "さらに読み込む",
     loadFailed: "ギャラリーを読み込めませんでした。"
   },
-
-
   settings: {
     title: "設定",
     theme: {
@@ -213,8 +210,6 @@ export const ja = {
       loadFailed: "パターン日付を読み込めませんでした。"
     },
     profileHint: "プロフィールは任意です。既定値に使うか、すべて手動で作成できます。",
-    selectGroup: "グループを選択",
-    selectGroupPlaceholder: "グループを選択",
     loadProfile: "プロフィールを読み込む (任意)",
     loadProfilePlaceholder: "プロフィールを選択",
     clearProfile: "プロフィールをクリア",
@@ -223,17 +218,8 @@ export const ja = {
     dateSourcePattern: "プロフィールのパターンから",
     dateOption: "日付を選択",
     patternDateLabel: "{label} - {date}",
-    manualDate: "日付",
-    manualTime: "時刻",
-    timezone: "タイムゾーン",
-    duration: "所要時間 (DD:HH:MM)",
-    eventName: "イベント名",
-    description: "説明",
-    category: "カテゴリ",
-      tags: "タグ（最大5）",
-      access: "アクセス",
-      accessType: "アクセス種別",
-      roleRestrictions: {
+    access: "アクセス",
+    roleRestrictions: {
         title: "ロール制限",
         hint: "任意 - 有効にすると、選択したグループロールのみ参加できます。",
         optional: "インスタンスモデレーターは、選択した最下位のモデレーターロール以上のロールが参加できます。",
@@ -241,14 +227,7 @@ export const ja = {
         managementRoles: "管理ロール",
         roles: "ロール",
         noRoles: "このグループで利用できるロールがありません。"
-      },
-      imageId: "画像ID (任意)",
-    imageIdPlaceholder: "例: file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "通知を送信",
-    languages: "言語 (最大3)",
-    languagesHint: "{count} 件選択",
-    filterLanguages: "言語を絞り込み...",
-    platforms: "プラットフォーム",
+    },
     manualProfileOption: "手動 (プロフィールなし)",
     pastDateError: "過去の日付は選択できません。",
     futureDateError: "イベントは最長1年先までしか設定できません。",
@@ -280,8 +259,7 @@ export const ja = {
     title: "イベントを編集",
     subtitle: "グループの今後のイベントを編集または削除します。",
     groupLabel: "グループ",
-    selectGroupPlaceholder: "グループを選択",
-    refresh: "更新",
+    showPending: "保留中を表示",
     countEmpty: "今後のイベント情報を取得できません。",
     countGroupFallback: "このグループ",
     countStatus: "{group} の今後のイベント: {count}。",
@@ -290,29 +268,14 @@ export const ja = {
     eventImage: "イベント画像",
     noImage: "画像なし",
     untitled: "無題のイベント",
-    delete: "イベントを削除",
     profileLabel: "プロフィールを読み込む（任意）",
     profileSelect: "プロフィールを選択",
     profileLoad: "読み込み",
     profileSelectError: "読み込むプロフィールを選択してください。",
     profileLoadFailed: "プロフィールの既定値を読み込めませんでした。",
     profileLoaded: "プロフィールの既定値を読み込みました。",
-    eventName: "イベント名",
-    description: "説明",
-    category: "カテゴリ",
-    tags: "タグ（最大5）",
-    accessType: "アクセス種別",
-    imageId: "画像ID（任意）",
-    imageIdPlaceholder: "例: file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    sendNotification: "通知を送信",
     manualDate: "日付を変更",
     manualTime: "時刻を変更",
-    timezone: "タイムゾーン",
-    duration: "所要時間 (DD:HH:MM)",
-    languages: "言語（最大3）",
-    languagesHint: "{count} 件選択",
-    filterLanguages: "言語を絞り込む...",
-    platforms: "プラットフォーム",
     modal: {
       title: "イベントを編集",
       subtitle: "変更は［保存］を押したときにのみ適用されます。"
@@ -370,39 +333,20 @@ export const ja = {
       groupAccess: "カレンダー権限のあるグループを選択してください。",
       patternsInfo: "パターンは今後の日付を事前生成するために使用されます。"
     },
-    selectGroup: "グループを選択",
-    selectGroupPlaceholder: "グループを選択",
     existingProfile: "既存プロフィール",
     existingProfilePlaceholder: "プロフィールを選択",
     noProfiles: "このグループにはプロフィールがありません",
     newButton: "新規プロフィール",
-    editButton: "編集",
-    deleteButton: "削除",
     saveButton: "プロフィールを保存",
-    save: "保存",
     displayName: "プロフィール名",
     displayNamePlaceholder: "コミュニティ交流テンプレート",
-    eventName: "イベント名",
-    description: "説明",
-    category: "カテゴリ",
-    tags: "タグ（最大5）",
     access: "アクセス",
-    accessType: "アクセス種別",
-    imageId: "画像ID (任意)",
-    imageIdPlaceholder: "例: file_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    duration: "所要時間 (DD:HH:MM)",
     durationDefault: "既定の所要時間 (DD:HH:MM)",
-    timezone: "タイムゾーン",
     dateMode: "日付モード",
     dateModePattern: "パターン",
     dateModeManual: "手動のみ",
     dateModeBoth: "パターン + 手動",
-    sendNotification: "通知を送信",
     sendNotificationDefault: "既定で通知を送信",
-    languages: "言語 (最大3)",
-    languagesHint: "{count} 件選択",
-    filterLanguages: "言語を絞り込み...",
-    platforms: "プラットフォーム",
     patterns: {
       title: "繰り返しパターン",
       addButton: "パターン追加",
@@ -423,21 +367,22 @@ export const ja = {
         nth2: "毎月第2 [曜日]",
         nth3: "毎月第3 [曜日]",
         nth4: "毎月第4 [曜日]",
-        last: "毎月最終 [曜日]"
+        last: "毎月最終 [曜日]",
+        annual: "毎年[日付]"
       },
       format: {
         every: "毎週{weekday} {time}",
         everyOther: "隔週{weekday} {time}",
         last: "最終{weekday} {time}",
-        nth: "{ordinal}{weekday} {time}"
+        nth: "{ordinal}{weekday} {time}",
+        annual: "毎年{month}{day} {time}"
       },
       ordinal1: "第1",
       ordinal2: "第2",
       ordinal3: "第3",
       ordinal4: "第4",
       date: "日付",
-      selectMonth: "月を選択",
-      annual: "毎年[日付]"
+      selectMonth: "月を選択"
     },
     automation: {
       title: "自動化（実験的）",
@@ -456,8 +401,8 @@ export const ja = {
       minutes: "分",
       monthlyHint: "毎月この日にイベントを投稿：",
       monthlyDay: "日",
-      monthlyHour: "時",
-      monthlyMinute: "分",
+      monthlyDayHint: "29～31日は短い月の最終日を使用します",
+      monthlyTime: "時刻",
       repeatMode: "繰り返し",
       repeatModes: {
         indefinite: "無期限",
@@ -546,6 +491,20 @@ export const ja = {
       saturday: "土曜日",
       sunday: "日曜日"
     },
+    months: {
+      january: "1月",
+      february: "2月",
+      march: "3月",
+      april: "4月",
+      may: "5月",
+      june: "6月",
+      july: "7月",
+      august: "8月",
+      september: "9月",
+      october: "10月",
+      november: "11月",
+      december: "12月"
+    },
     fields: {
       eventName: "イベント名",
       description: "説明",
@@ -576,7 +535,3 @@ export const ja = {
     continue: "そのまま作成"
   }
 };
-
-
-
-
